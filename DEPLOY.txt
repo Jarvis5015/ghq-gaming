@@ -1,0 +1,148 @@
+=========================================
+GHQ DEPLOYMENT GUIDE — Simple Version
+=========================================
+
+WHAT WE'RE DOING:
+  Frontend  → Vercel  (free, auto-deploys)
+  Backend   → Render  (free, Node.js)
+  Database  → Render  (free PostgreSQL)
+
+All three are free. Total cost = ₹0.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 1 — PUSH CODE TO GITHUB (One repo)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Go to https://github.com → Sign in → click "New" (green button)
+2. Repository name: ghq-gaming
+3. Set to PUBLIC (required for free deployment)
+4. Click "Create repository"
+5. GitHub will show you a page with commands. Copy the repo URL.
+   It looks like: https://github.com/YOUR_NAME/ghq-gaming.git
+
+6. Open PowerShell in E:\programing\GHQ and run these commands ONE BY ONE:
+
+   git init
+   git add .
+   git commit -m "GHQ Gaming Platform v1.0"
+   git branch -M main
+   git remote add origin https://github.com/YOUR_NAME/ghq-gaming.git
+   git push -u origin main
+
+   (Replace YOUR_NAME with your actual GitHub username)
+
+7. Refresh GitHub — you should see all your files there ✓
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 2 — DEPLOY BACKEND ON RENDER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Go to https://render.com → Sign up with GitHub
+
+2. Click "New +" → "PostgreSQL"
+   - Name: ghq-db
+   - Plan: Free
+   - Click "Create Database"
+   - WAIT for it to be ready (1-2 min)
+   - Copy the "Internal Database URL" — you'll need it
+
+3. Click "New +" → "Web Service"
+   - Connect your GitHub repo: ghq-gaming
+   - Fill in these settings:
+     Name:           ghq-api
+     Root Directory: server        ← IMPORTANT: type "server" here
+     Runtime:        Node
+     Build Command:  npm install && npx prisma generate && npx prisma migrate deploy
+     Start Command:  npm start
+     Plan:           Free
+
+4. Scroll down to "Environment Variables" → Add these one by one:
+
+   Key                        Value
+   ─────────────────────────  ─────────────────────────────────────────
+   NODE_ENV                   production
+   DATABASE_URL               (paste the Internal Database URL from step 2)
+   JWT_SECRET                 (go to https://randomkeygen.com → copy a 256-bit key)
+   JWT_EXPIRES_IN             7d
+   CLIENT_URL                 https://ghq-gaming.vercel.app  ← update after Part 3
+   UPI_ID                     parshwapati2009@okhdfcbank
+   UPI_NAME                   GamerHeadQuarter
+   PAYMENT_CODE_EXPIRY_HOURS  24
+
+5. Click "Create Web Service"
+   - Render will build and deploy (takes 3-5 minutes)
+   - You'll see logs at the bottom — wait for "Your service is live"
+
+6. Copy your Render URL — looks like: https://ghq-api.onrender.com
+   Test it: open https://ghq-api.onrender.com/api/health in browser
+   You should see: {"status":"ok","service":"GHQ API 🎮"}
+
+7. Seed the database (run this ONCE after first deploy):
+   - In Render dashboard → your ghq-api service → "Shell" tab
+   - Type: node prisma/seed.js
+   - Press Enter — wait for "🎮 GHQ database ready!"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 3 — DEPLOY FRONTEND ON VERCEL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Go to https://vercel.com → Sign up with GitHub
+
+2. Click "Add New" → "Project"
+   - Import your ghq-gaming repo
+   - Framework Preset: Vite   (auto-detected)
+   - Root Directory: ./        (leave as default — frontend is at root)
+
+3. Expand "Environment Variables" → Add:
+
+   Key           Value
+   ────────────  ──────────────────────────────────────────────
+   VITE_API_URL  https://ghq-api.onrender.com/api
+                 (use your actual Render URL from Part 2 step 6)
+
+4. Click "Deploy"
+   - Takes about 1 minute
+   - Copy your Vercel URL — looks like: https://ghq-gaming.vercel.app
+
+5. Go BACK to Render → ghq-api service → Environment tab
+   - Update CLIENT_URL to your actual Vercel URL
+   - Click "Save Changes" → Render will auto-redeploy
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DONE! TEST YOUR LIVE SITE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open your Vercel URL in the browser.
+
+Login with:
+  Admin:  admin@ghq.gg    / admin123
+  Player: phantom@ghq.gg  / player123
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FUTURE UPDATES (after you change code)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Every time you make changes to your code, just run:
+
+  git add .
+  git commit -m "describe what you changed"
+  git push
+
+Vercel and Render both automatically detect the push
+and redeploy within 2-3 minutes. That's it!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IMPORTANT NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Render free tier "sleeps" after 15 min of no traffic.
+  First request after sleep takes ~30 seconds to wake up.
+  This is normal on the free plan.
+
+• To avoid the sleep: upgrade Render to $7/month Starter plan
+  when you have real users.
+
+• Your database on Render free plan holds up to 1GB.
+  More than enough to start.
+
+• Vercel free plan: 100GB bandwidth/month. More than enough.

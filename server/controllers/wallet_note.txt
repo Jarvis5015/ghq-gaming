@@ -1,0 +1,1 @@
+// GET /api/wallet/balance — returns gollers (not gollars — keep consistent with DB field name)

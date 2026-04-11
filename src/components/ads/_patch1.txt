@@ -1,0 +1,8 @@
+  const EMPTY = {
+    name:'', game:'', platform:'PC', type:'TOURNAMENT', mode:'FREE',
+    entryFee:'', prizePool:'', maxPlayers:'64', coinReward:'100',
+    description:'', rules:'',
+    registrationStart:'', registrationEnd:'', startDate:'', startTime:'18:00', tournamentEnd:'',
+    prizeTiers: [],
+    adsRequired: 0,
+  }

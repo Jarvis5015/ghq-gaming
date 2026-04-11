@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-glow-cyan {
+    text-shadow: 0 0 20px #00f5ff88, 0 0 40px #00f5ff44;
+  }
+  .text-glow-gold {
+    text-shadow: 0 0 20px #ffd70088, 0 0 40px #ffd70044;
+  }
+  .border-glow {
+    box-shadow: 0 0 0 1px #00f5ff22, inset 0 0 20px #00f5ff08;
+  }
+  .card-glass {
+    background: linear-gradient(135deg, #0d1428cc, #0a0f1ecc);
+    backdrop-filter: blur(20px);
+    border: 1px solid #1a254588;
+  }
+  .clip-corner {
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  }
+}
+
+/* ── Ticker ── */
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── Scan line ── */
+@keyframes scan {
+  0%   { top: 0%; }
+  100% { top: 100%; }
+}
+
+/* ── Float ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-10px) rotate(1deg); }
+}
+
+/* ── Hex pulse ── */
+@keyframes hexPulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%       { opacity: 0.7; transform: scale(1.05); }
+}
+
+/* ── Border gradient run ── */
+@keyframes borderRun {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Live dot pulse ── */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(1.5); }
+}
+
+/* ── Coin glow ── */
+@keyframes coinGlow {
+  0%, 100% { filter: drop-shadow(0 0 4px #ffd700); }
+  50%       { filter: drop-shadow(0 0 12px #ffd700) drop-shadow(0 0 24px #ffd70060); }
+}
+
+/* ── Glitch ── */
+@keyframes glitch1 {
+  0%, 100% { clip-path: inset(0 0 95% 0); transform: translateX(-3px); }
+  20%  { clip-path: inset(30% 0 50% 0); transform: translateX(3px); }
+  40%  { clip-path: inset(70% 0 15% 0); transform: translateX(-3px); }
+  60%  { clip-path: inset(10% 0 80% 0); transform: translateX(2px); }
+  80%  { clip-path: inset(50% 0 30% 0); transform: translateX(-2px); }
+}
+@keyframes glitch2 {
+  0%, 100% { clip-path: inset(80% 0 5% 0); transform: translateX(3px); }
+  20%  { clip-path: inset(10% 0 70% 0); transform: translateX(-3px); }
+  40%  { clip-path: inset(45% 0 40% 0); transform: translateX(3px); }
+  60%  { clip-path: inset(75% 0 10% 0); transform: translateX(-2px); }
+  80%  { clip-path: inset(20% 0 65% 0); transform: translateX(2px); }
+}
+
+/* ── Utility classes ── */
+.animate-float    { animation: float 6s ease-in-out infinite; }
+.animate-hexPulse { animation: hexPulse 3s ease-in-out infinite; }
+.live-dot         { animation: livePulse 1.5s ease-in-out infinite; }
+.coin-icon        { animation: coinGlow 2s ease-in-out infinite; }
+
+.gradient-border {
+  background: linear-gradient(135deg, #00f5ff, #7c3aed, #00f5ff);
+  background-size: 300% 300%;
+  animation: borderRun 4s ease infinite;
+}
+
+.glitch-text { position: relative; }
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute; inset: 0;
+  font: inherit;
+}
+.glitch-text::before { color: #00f5ff; animation: glitch1 4s infinite; }
+.glitch-text::after  { color: #ff2d55; animation: glitch2 4s infinite; }
+
+/* ── Tag helpers ── */
+.tag-free      { background: rgba(0,255,136,0.1);  color: #00ff88; border: 1px solid rgba(0,255,136,0.3); }
+.tag-paid      { background: rgba(255,215,0,0.1);  color: #ffd700; border: 1px solid rgba(255,215,0,0.3); }
+.tag-champions { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.4); }
+.tag-live      { background: rgba(255,45,85,0.15); color: #ff2d55; border: 1px solid rgba(255,45,85,0.4); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar       { width: 4px; }
+::-webkit-scrollbar-track  { background: #050810; }
+::-webkit-scrollbar-thumb  { background: #00f5ff44; border-radius: 2px; }
+
+::selection { background: #00f5ff33; color: #00f5ff; }

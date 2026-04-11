@@ -1,0 +1,30 @@
+        {/* ── Ads Gate (FREE tournaments only) ── */}
+        {form.mode === 'FREE' && (
+          <div className="border border-[#00f5ff]/20 p-5 space-y-3"
+            style={{ clipPath:'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)' }}>
+            <div className="font-mono text-[10px] text-[#00f5ff] tracking-widest uppercase">📺 AD GATE (Free Tournament)</div>
+            <p className="font-mono text-[10px] text-[#4a5568] leading-relaxed">
+              Players joining this free tournament must watch this many Google AdSense ads before their slot is confirmed.
+              Set to 0 for instant join with no ads.
+            </p>
+            <div className="flex items-center gap-4">
+              <div className="w-48">
+                <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Ads Required to Join</label>
+                <input
+                  type="number" min="0" max="10"
+                  value={form.adsRequired}
+                  onChange={e => set('adsRequired', Math.max(0, Math.min(10, Number(e.target.value)||0)))}
+                  className={inputCls}
+                />
+              </div>
+              <div className="flex gap-1.5 mt-5">
+                {[0,1,2,3,5].map(n => (
+                  <button key={n} type="button" onClick={() => set('adsRequired', n)}
+                    className={`px-3 py-2 font-mono text-[10px] tracking-wider border transition-all ${Number(form.adsRequired)===n?'border-[#00f5ff] text-[#00f5ff] bg-[#00f5ff]/10':'border-[#1a2545] text-[#4a5568] hover:text-white'}`}>
+                    {n === 0 ? 'None' : `${n} ad${n!==1?'s':''}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}

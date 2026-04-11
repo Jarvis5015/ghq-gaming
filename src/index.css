@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ghq-black: #050508;
+  --ghq-dark: #0a0a12;
+  --ghq-card: #0f0f1a;
+  --ghq-border: #1a1a2e;
+  --ghq-gold: #f5c842;
+  --ghq-cyan: #00e5ff;
+  --ghq-red: #ff2d55;
+  --ghq-green: #00ff88;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: var(--ghq-black);
+  color: #e8e8f0;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--ghq-dark); }
+::-webkit-scrollbar-thumb { background: var(--ghq-gold); border-radius: 2px; }
+
+@keyframes glitch1 {
+  0%, 100% { clip-path: inset(0 0 95% 0); transform: translateX(-3px); }
+  20% { clip-path: inset(30% 0 50% 0); transform: translateX(3px); }
+  40% { clip-path: inset(70% 0 15% 0); transform: translateX(-3px); }
+  60% { clip-path: inset(10% 0 80% 0); transform: translateX(2px); }
+  80% { clip-path: inset(50% 0 30% 0); transform: translateX(-2px); }
+}
+@keyframes glitch2 {
+  0%, 100% { clip-path: inset(80% 0 5% 0); transform: translateX(3px); }
+  20% { clip-path: inset(10% 0 70% 0); transform: translateX(-3px); }
+  40% { clip-path: inset(45% 0 40% 0); transform: translateX(3px); }
+  60% { clip-path: inset(75% 0 10% 0); transform: translateX(-2px); }
+  80% { clip-path: inset(20% 0 65% 0); transform: translateX(2px); }
+}
+.glitch-text { position: relative; }
+.glitch-text::before, .glitch-text::after {
+  content: attr(data-text);
+  position: absolute; inset: 0;
+  font-family: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit;
+}
+.glitch-text::before { color: var(--ghq-cyan); animation: glitch1 4s infinite; }
+.glitch-text::after { color: var(--ghq-red); animation: glitch2 4s infinite; }
+
+.btn-gold {
+  background: linear-gradient(135deg, #f5c842 0%, #c9a227 100%);
+  color: #050508; font-family: 'Bebas Neue', cursive; font-size: 1.1rem;
+  letter-spacing: 0.1em; padding: 0.75rem 2rem; border: none;
+  cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s ease;
+}
+.btn-gold::before {
+  content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+  background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+  transform: translateX(-100%); transition: transform 0.5s ease;
+}
+.btn-gold:hover::before { transform: translateX(100%); }
+.btn-gold:hover { box-shadow: 0 0 20px rgba(245,200,66,0.5), 0 0 40px rgba(245,200,66,0.2); transform: translateY(-2px); }
+
+.btn-outline-cyan {
+  background: transparent; color: var(--ghq-cyan); font-family: 'Bebas Neue', cursive;
+  font-size: 1.1rem; letter-spacing: 0.1em; padding: 0.72rem 2rem;
+  border: 1px solid var(--ghq-cyan); cursor: pointer; transition: all 0.3s ease;
+}
+.btn-outline-cyan:hover { background: rgba(0,229,255,0.08); box-shadow: 0 0 20px rgba(0,229,255,0.3); }
+
+.card-glass { background: rgba(15,15,26,0.8); border: 1px solid rgba(26,26,46,0.8); backdrop-filter: blur(12px); }
+
+.tag-free { background: rgba(0,255,136,0.1); color: #00ff88; border: 1px solid rgba(0,255,136,0.3); }
+.tag-paid { background: rgba(245,200,66,0.1); color: #f5c842; border: 1px solid rgba(245,200,66,0.3); }
+.tag-champions { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.4); }
+.tag-live { background: rgba(255,45,85,0.15); color: #ff2d55; border: 1px solid rgba(255,45,85,0.4); }
+
+.divider-gold { height: 1px; background: linear-gradient(90deg, transparent, #f5c842, transparent); }
+.divider-cyan { height: 1px; background: linear-gradient(90deg, transparent, #00e5ff, transparent); }
+
+.rank-1 { color: #f5c842; text-shadow: 0 0 10px #f5c84280; }
+.rank-2 { color: #c0c0c0; }
+.rank-3 { color: #cd7f32; }
+
+@keyframes livePulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.5); } }
+.live-dot { animation: livePulse 1.5s ease-in-out infinite; }
+
+@keyframes coinGlow {
+  0%, 100% { filter: drop-shadow(0 0 4px #f5c842); }
+  50% { filter: drop-shadow(0 0 10px #f5c842) drop-shadow(0 0 20px #f5c84260); }
+}
+.coin-icon { animation: coinGlow 2s ease-in-out infinite; }
+
+@keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }

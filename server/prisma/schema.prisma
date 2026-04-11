@@ -1,0 +1,331 @@
+// Prisma schema — GHQ Database v7
+// Fixed: all enum values on separate lines (Prisma requirement)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── User ─────────────────────────────────────────────────────────────────────
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  avatar       String   @default("")
+  role         Role     @default(PLAYER)
+
+  gollers      Int      @default(500)
+  totalBought  Int      @default(0)
+  totalSpent   Int      @default(0)
+
+  coins        Int      @default(500)
+  totalEarned  Int      @default(500)
+
+  wins         Int      @default(0)
+  losses       Int      @default(0)
+  rank         Int?
+
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  gameProfiles     UserGameProfile[]
+  registrations    Registration[]
+  transactions     CoinTransaction[]
+  gollerTopUps     GollerTopUp[]
+  achievements     UserAchievement[]
+  refreshTokens    RefreshToken[]
+  withdrawRequests WithdrawRequest[]
+  dailySpins       DailySpin[]
+
+  @@map("users")
+}
+
+enum Role {
+  PLAYER
+  ADMIN
+}
+
+// ─── Advertisement ────────────────────────────────────────────────────────────
+model Advertisement {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String   @default("")
+  imageUrl    String
+  linkUrl     String   @default("")
+  placement   String   @default("general")
+  isActive    Boolean  @default(true)
+  viewSeconds Int      @default(5)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("advertisements")
+}
+
+// ─── DailySpin ────────────────────────────────────────────────────────────────
+model DailySpin {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  coinsWon Int
+  segment  String
+  spinDate DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("daily_spins")
+}
+
+// ─── PlatformConfig ───────────────────────────────────────────────────────────
+model PlatformConfig {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  label     String
+  category  String   @default("general")
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_config")
+}
+
+// ─── GollerTopUp ─────────────────────────────────────────────────────────────
+model GollerTopUp {
+  id         Int         @id @default(autoincrement())
+  code       String      @unique
+  userId     Int
+  amount     Int
+  status     TopUpStatus @default(PENDING)
+  verifiedAt DateTime?
+  expiresAt  DateTime
+  createdAt  DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("goller_top_ups")
+}
+
+enum TopUpStatus {
+  PENDING
+  SUBMITTED
+  VERIFIED
+  EXPIRED
+  CANCELLED
+}
+
+// ─── WithdrawRequest ──────────────────────────────────────────────────────────
+model WithdrawRequest {
+  id        Int            @id @default(autoincrement())
+  userId    Int
+  amount    Int
+  upiId     String
+  upiName   String         @default("")
+  status    WithdrawStatus @default(PENDING)
+  note      String         @default("")
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("withdraw_requests")
+}
+
+enum WithdrawStatus {
+  PENDING
+  PAID
+  REJECTED
+}
+
+// ─── UserGameProfile ──────────────────────────────────────────────────────────
+model UserGameProfile {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  game       String
+  platform   String
+  gameUserId String   @default("")
+  rank       String   @default("")
+
+  wins              Int @default(0)
+  losses            Int @default(0)
+  tournamentsPlayed Int @default(0)
+  gollersSpent      Int @default(0)
+
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, game])
+  @@map("user_game_profiles")
+}
+
+// ─── Tournament ───────────────────────────────────────────────────────────────
+model Tournament {
+  id          Int              @id @default(autoincrement())
+  name        String
+  game        String
+  platform    String
+  type        TournamentType
+  mode        TournamentMode
+  status      TournamentStatus @default(UPCOMING)
+  entryFee    Int              @default(0)
+  prizePool   Int              @default(0)
+  coinReward  Int              @default(100)
+  maxPlayers  Int              @default(64)
+  description String           @default("")
+  rules       String[]         @default([])
+  tags        String[]         @default([])
+  organizer   String           @default("GHQ Staff")
+  region      String           @default("India")
+
+  registrationStart DateTime?
+  registrationEnd   DateTime?
+  startDate         DateTime
+  tournamentEnd     DateTime?
+
+  prizeTiers  Json @default("[]")
+  adsRequired Int  @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  registrations  Registration[]
+  bracketMatches BracketMatch[]
+
+  @@map("tournaments")
+}
+
+enum TournamentType {
+  TOURNAMENT
+  CHAMPIONS
+}
+
+enum TournamentMode {
+  FREE
+  PAID
+}
+
+enum TournamentStatus {
+  DRAFT
+  UPCOMING
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+// ─── Registration ─────────────────────────────────────────────────────────────
+model Registration {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  tournamentId Int
+  status       RegStatus @default(REGISTERED)
+  placement    Int?
+  coinsEarned  Int       @default(0)
+  gollarsWon   Int       @default(0)
+  gollersPaid  Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  user       User       @relation(fields: [userId], references: [id])
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+
+  @@unique([userId, tournamentId])
+  @@map("registrations")
+}
+
+enum RegStatus {
+  REGISTERED
+  CHECKEDIN
+  ELIMINATED
+  COMPLETED
+}
+
+// ─── Bracket Match ────────────────────────────────────────────────────────────
+model BracketMatch {
+  id           Int         @id @default(autoincrement())
+  tournamentId Int
+  round        Int
+  roundName    String
+  matchNumber  Int
+  player1Name  String      @default("TBD")
+  player1Score Int?
+  player2Name  String      @default("TBD")
+  player2Score Int?
+  status       MatchStatus @default(UPCOMING)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+
+  @@map("bracket_matches")
+}
+
+enum MatchStatus {
+  UPCOMING
+  LIVE
+  DONE
+}
+
+// ─── CoinTransaction ─────────────────────────────────────────────────────────
+model CoinTransaction {
+  id        Int             @id @default(autoincrement())
+  userId    Int
+  type      TransactionType
+  amount    Int
+  label     String
+  game      String?
+  createdAt DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("coin_transactions")
+}
+
+enum TransactionType {
+  EARN
+  SPEND
+}
+
+// ─── Achievement ──────────────────────────────────────────────────────────────
+model Achievement {
+  id          Int     @id @default(autoincrement())
+  key         String  @unique
+  icon        String
+  label       String
+  description String
+  coinReward  Int
+  game        String?
+
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  achievementId Int
+  earnedAt      DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id])
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+// ─── Refresh Token ────────────────────────────────────────────────────────────
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("refresh_tokens")
+}
