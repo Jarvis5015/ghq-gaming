@@ -18,14 +18,11 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     const result = await login(form.email, form.password)
-    if (result.success) {
-      navigate('/')   // Redirect to homepage on success
-    }
+    if (result.success) navigate('/')
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12">
-      {/* Background effects */}
       <div className="absolute inset-0 opacity-[0.03]"
         style={{ backgroundImage: 'linear-gradient(#00f5ff 1px, transparent 1px), linear-gradient(90deg, #00f5ff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full pointer-events-none"
@@ -36,7 +33,6 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
         className="relative w-full max-w-md"
       >
-        {/* Card */}
         <div className="border border-[#1a2545] bg-[#0a0f1e] overflow-hidden"
           style={{ clipPath: 'polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 0 100%)' }}>
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#00f5ff] to-transparent" />
@@ -56,7 +52,7 @@ export default function Login() {
               <p className="font-body text-sm text-[#4a5568] mt-1">Sign in to your GHQ account</p>
             </div>
 
-            {/* Error message */}
+            {/* Error */}
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -8 }}
@@ -69,7 +65,6 @@ export default function Login() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Email */}
               <div>
                 <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">
                   Email
@@ -85,7 +80,6 @@ export default function Login() {
                 />
               </div>
 
-              {/* Password */}
               <div>
                 <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">
                   Password
@@ -110,7 +104,6 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Submit */}
               <button
                 type="submit"
                 disabled={isLoading}
@@ -123,15 +116,6 @@ export default function Login() {
                 </span>
               </button>
             </form>
-
-            {/* Demo credentials hint */}
-            <div className="mt-5 p-3 border border-[#1a2545]/60 bg-[#050810]/60">
-              <div className="font-mono text-[9px] text-[#4a5568] tracking-wider mb-1.5">DEMO CREDENTIALS</div>
-              <div className="font-mono text-[10px] text-[#e8eaf6]/50 space-y-0.5">
-                <div>Admin → <span className="text-[#00f5ff]">admin@ghq.gg</span> / <span className="text-[#00f5ff]">admin123</span></div>
-                <div>Player → <span className="text-[#ffd700]">phantom@ghq.gg</span> / <span className="text-[#ffd700]">player123</span></div>
-              </div>
-            </div>
 
             <div className="mt-6 text-center">
               <span className="font-body text-sm text-[#4a5568]">New to GHQ? </span>
