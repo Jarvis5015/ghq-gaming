@@ -1,148 +1,183 @@
 =========================================
-GHQ DEPLOYMENT GUIDE — Simple Version
+  GHQ DEPLOYMENT GUIDE
+  Frontend  → Vercel  (free, always on)
+  Backend   → Koyeb   (free, always on, no sleep!)
+  Database  → Neon    (free PostgreSQL, always on)
+  Total cost = FREE
 =========================================
 
-WHAT WE'RE DOING:
-  Frontend  → Vercel  (free, auto-deploys)
-  Backend   → Render  (free, Node.js)
-  Database  → Render  (free PostgreSQL)
-
-All three are free. Total cost = ₹0.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PART 1 — PUSH CODE TO GITHUB (One repo)
+STEP 1 — CREATE GITHUB REPO
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. Go to https://github.com → Sign in → click "New" (green button)
-2. Repository name: ghq-gaming
-3. Set to PUBLIC (required for free deployment)
-4. Click "Create repository"
-5. GitHub will show you a page with commands. Copy the repo URL.
-   It looks like: https://github.com/YOUR_NAME/ghq-gaming.git
-
-6. Open PowerShell in E:\programing\GHQ and run these commands ONE BY ONE:
-
-   git init
-   git add .
-   git commit -m "GHQ Gaming Platform v1.0"
-   git branch -M main
-   git remote add origin https://github.com/YOUR_NAME/ghq-gaming.git
-   git push -u origin main
-
-   (Replace YOUR_NAME with your actual GitHub username)
-
-7. Refresh GitHub — you should see all your files there ✓
+1. Go to https://github.com
+2. Click the "+" icon top right → "New repository"
+3. Name it: ghq-gaming
+4. Set to: Public
+5. Do NOT tick "Add README" (we already have one)
+6. Click "Create repository"
+7. Copy the URL shown — like: https://github.com/YOURNAME/ghq-gaming.git
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PART 2 — DEPLOY BACKEND ON RENDER
+STEP 2 — PUSH YOUR CODE TO GITHUB
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. Go to https://render.com → Sign up with GitHub
+Open PowerShell in E:\programing\GHQ
+(right-click the folder → "Open in Terminal")
 
-2. Click "New +" → "PostgreSQL"
-   - Name: ghq-db
-   - Plan: Free
-   - Click "Create Database"
-   - WAIT for it to be ready (1-2 min)
-   - Copy the "Internal Database URL" — you'll need it
+Run these commands one by one:
 
-3. Click "New +" → "Web Service"
-   - Connect your GitHub repo: ghq-gaming
-   - Fill in these settings:
-     Name:           ghq-api
-     Root Directory: server        ← IMPORTANT: type "server" here
-     Runtime:        Node
-     Build Command:  npm install && npx prisma generate && npx prisma migrate deploy
-     Start Command:  npm start
-     Plan:           Free
+  git init
+  git add .
+  git commit -m "GHQ Gaming Platform v1.0"
+  git branch -M main
+  git remote add origin https://github.com/YOURNAME/ghq-gaming.git
+  git push -u origin main
 
-4. Scroll down to "Environment Variables" → Add these one by one:
+NOTE: The "LF will be replaced by CRLF" warnings are NORMAL on
+Windows — ignore them completely. They don't affect anything.
 
-   Key                        Value
-   ─────────────────────────  ─────────────────────────────────────────
-   NODE_ENV                   production
-   DATABASE_URL               (paste the Internal Database URL from step 2)
-   JWT_SECRET                 (go to https://randomkeygen.com → copy a 256-bit key)
-   JWT_EXPIRES_IN             7d
-   CLIENT_URL                 https://ghq-gaming.vercel.app  ← update after Part 3
-   UPI_ID                     parshwapati2009@okhdfcbank
-   UPI_NAME                   GamerHeadQuarter
-   PAYMENT_CODE_EXPIRY_HOURS  24
-
-5. Click "Create Web Service"
-   - Render will build and deploy (takes 3-5 minutes)
-   - You'll see logs at the bottom — wait for "Your service is live"
-
-6. Copy your Render URL — looks like: https://ghq-api.onrender.com
-   Test it: open https://ghq-api.onrender.com/api/health in browser
-   You should see: {"status":"ok","service":"GHQ API 🎮"}
-
-7. Seed the database (run this ONCE after first deploy):
-   - In Render dashboard → your ghq-api service → "Shell" tab
-   - Type: node prisma/seed.js
-   - Press Enter — wait for "🎮 GHQ database ready!"
+After the last command, refresh your GitHub page.
+You should see all your files there. ✓
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PART 3 — DEPLOY FRONTEND ON VERCEL
+STEP 3 — CREATE FREE DATABASE ON NEON
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. Go to https://vercel.com → Sign up with GitHub
+Neon = free PostgreSQL, always on, no credit card needed.
 
-2. Click "Add New" → "Project"
-   - Import your ghq-gaming repo
-   - Framework Preset: Vite   (auto-detected)
-   - Root Directory: ./        (leave as default — frontend is at root)
+1. Go to https://neon.tech
+2. Click "Sign Up" → use GitHub (easiest)
+3. Click "Create Project"
+   - Project name: ghq-gaming
+   - Database name: ghq_db
+   - Region: pick closest to India (AWS ap-south-1 Mumbai)
+   - Click "Create project"
 
-3. Expand "Environment Variables" → Add:
+4. On the next screen you'll see your connection string.
+   Click "Copy" next to the connection string.
+   It looks like:
+   postgresql://USER:PASSWORD@ep-xxx.ap-south-1.aws.neon.tech/ghq_db?sslmode=require
 
-   Key           Value
-   ────────────  ──────────────────────────────────────────────
-   VITE_API_URL  https://ghq-api.onrender.com/api
-                 (use your actual Render URL from Part 2 step 6)
-
-4. Click "Deploy"
-   - Takes about 1 minute
-   - Copy your Vercel URL — looks like: https://ghq-gaming.vercel.app
-
-5. Go BACK to Render → ghq-api service → Environment tab
-   - Update CLIENT_URL to your actual Vercel URL
-   - Click "Save Changes" → Render will auto-redeploy
+5. SAVE THIS STRING — you'll need it in Step 4.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-DONE! TEST YOUR LIVE SITE
+STEP 4 — DEPLOY BACKEND ON KOYEB
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+postgresql://neondb_owner:npg_tpg2n7AQhWVB@ep-purple-waterfall-a7ornvbj.ap-southeast-2.aws.neon.tech/neondb?sslmode=require
+
+Koyeb = always-on free Node.js hosting, no sleep ever.
+
+1. Go to https://www.koyeb.com
+2. Click "Get Started Free" → sign up with GitHub
+
+3. Click "Create App"
+4. Choose "GitHub" as source
+5. Select your repo: ghq-gaming
+6. Fill in the settings:
+   
+   Builder:          Buildpack (auto-detected)
+   Root directory:   server         ← TYPE "server" HERE
+   Build command:    npm install && npx prisma generate && npx prisma migrate deploy
+   Start command:    npm start
+   Port:             5000
+
+7. Scroll down to "Environment variables"
+   Click "Add variable" for each one below:
+
+   NAME                        VALUE
+   ─────────────────────────── ────────────────────────────────────────
+   NODE_ENV                    production
+   DATABASE_URL                (paste your Neon connection string from Step 3)
+   JWT_SECRET                  (go to https://it-tools.tech/token-generator
+                                → set length 64 → copy the result)
+   JWT_EXPIRES_IN              7d
+   CLIENT_URL                  https://ghq-gaming.vercel.app
+                               (update this after Step 5 with real URL)
+   UPI_ID                      parshwapati2009@okhdfcbank
+   UPI_NAME                    GamerHeadQuarter
+   PAYMENT_CODE_EXPIRY_HOURS   24
+
+8. Click "Deploy"
+   Wait 3-5 minutes for the build to finish.
+   You'll see a green "Healthy" badge when it's done.
+
+9. Copy your Koyeb URL — looks like:
+   https://ghq-api-YOURNAME.koyeb.app
+
+10. Test it — open this in your browser:
+    https://ghq-api-YOURNAME.koyeb.app/api/health
+    You should see: {"status":"ok","service":"GHQ API 🎮"}  ✓
+
+11. SEED THE DATABASE (do this once):
+    In Koyeb dashboard → your app → "Console" tab (bottom of page)
+    Type: node prisma/seed.js
+    Press Enter. Wait for: "🎮 GHQ database ready!" ✓
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 5 — DEPLOY FRONTEND ON VERCEL
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Open your Vercel URL in the browser.
+1. Go to https://vercel.com
+2. Click "Sign Up" → use GitHub
 
-Login with:
-  Admin:  admin@ghq.gg    / admin123
-  Player: phantom@ghq.gg  / player123
+3. Click "Add New" → "Project"
+4. Click "Import" next to ghq-gaming repo
+
+5. Settings page:
+   Framework Preset:  Vite            (auto-detected)
+   Root Directory:    ./              (leave as default)
+
+6. Expand "Environment Variables" section
+   Add this variable:
+
+   NAME          VALUE
+   ────────────  ──────────────────────────────────────────────────────
+   VITE_API_URL  https://ghq-api-YOURNAME.koyeb.app/api
+                 (use your actual Koyeb URL from Step 4)
+
+7. Click "Deploy"
+   Takes about 60 seconds.
+
+8. Copy your Vercel URL — like: https://ghq-gaming.vercel.app
+
+9. Go BACK to Koyeb → your app → Settings → Environment Variables
+   Update CLIENT_URL to your real Vercel URL
+   Click "Save" → Koyeb will redeploy automatically
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-FUTURE UPDATES (after you change code)
+DONE! TEST YOUR LIVE PLATFORM
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Every time you make changes to your code, just run:
+Open your Vercel URL in browser.
+Share it with anyone!
+
+Login credentials:
+  Admin:  admin@ghq.gg     password: admin123
+  Player: phantom@ghq.gg   password: player123
+
+CHANGE THESE PASSWORDS after first login!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HOW TO UPDATE YOUR SITE IN FUTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Every time you change your code, just run 3 commands:
 
   git add .
-  git commit -m "describe what you changed"
+  git commit -m "what you changed"
   git push
 
-Vercel and Render both automatically detect the push
-and redeploy within 2-3 minutes. That's it!
+Both Vercel and Koyeb auto-detect the push and redeploy
+within 2-3 minutes. That's it!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-IMPORTANT NOTES
+FREE PLAN LIMITS (all fine for starting out)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-• Render free tier "sleeps" after 15 min of no traffic.
-  First request after sleep takes ~30 seconds to wake up.
-  This is normal on the free plan.
+Koyeb free:   1 service, 512MB RAM, always on (no sleep!)
+Neon free:    0.5GB storage, always on, 10 branches
+Vercel free:  100GB bandwidth/month, unlimited deploys
 
-• To avoid the sleep: upgrade Render to $7/month Starter plan
-  when you have real users.
-
-• Your database on Render free plan holds up to 1GB.
-  More than enough to start.
-
-• Vercel free plan: 100GB bandwidth/month. More than enough.
+All three are more than enough to run GHQ with real users.
