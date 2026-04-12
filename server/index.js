@@ -18,49 +18,59 @@ const adRoutes         = require('./routes/ad.routes')
 
 const { startScheduler } = require('./scheduler')
 
-const app  = express()
-const PORT = process.env.PORT || 5000
+const app    = express()
+const PORT   = process.env.PORT || 5000
 const isProd = process.env.NODE_ENV === 'production'
 
-// ── Trust proxy (needed for Railway / Render / Heroku) ────────────────────────
+// ── Trust proxy (required for Railway) ───────────────────────────────────────
 app.set('trust proxy', 1)
 
-// ── CORS — allow both local dev and production frontend ───────────────────────
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:4173',
-  process.env.CLIENT_URL,         // set in Railway env vars
-  process.env.CLIENT_URL_2,       // optional second domain
-].filter(Boolean)
-
+// ── CORS ──────────────────────────────────────────────────────────────────────
+// Allow all origins that end in vercel.app, or match our CLIENT_URL exactly
 app.use(cors({
-  origin: (origin, cb) => {
-    // Allow requests with no origin (mobile apps, curl, Postman)
-    if (!origin) return cb(null, true)
-    if (allowedOrigins.includes(origin)) return cb(null, true)
-    cb(new Error(`CORS blocked: ${origin}`))
+  origin: (origin, callback) => {
+    // Allow requests with no origin (Postman, mobile apps, server-to-server)
+    if (!origin) return callback(null, true)
+
+    const allowed = [
+      'http://localhost:5173',
+      'http://localhost:4173',
+      process.env.CLIENT_URL,
+      process.env.CLIENT_URL_2,
+    ].filter(Boolean)
+
+    // Allow any vercel.app subdomain (covers preview deployments too)
+    const isVercel = origin.endsWith('.vercel.app')
+    const isAllowed = allowed.includes(origin) || isVercel
+
+    if (isAllowed) return callback(null, true)
+    callback(new Error(`CORS: origin ${origin} not allowed`))
   },
   credentials:    true,
-  methods:        ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods:        ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200,   // some older browsers need 200 not 204
 }))
+
+// Handle preflight OPTIONS requests explicitly
+app.options('*', cors())
 
 // ── Security headers ──────────────────────────────────────────────────────────
 app.use(helmet({
-  crossOriginEmbedderPolicy: false,  // needed for QR code images from external API
-  contentSecurityPolicy: false,      // handled by frontend
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy:     false,
 }))
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 app.use('/api/', rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max:      isProd ? 150 : 500,
+  windowMs:        15 * 60 * 1000,
+  max:             isProd ? 200 : 500,
   standardHeaders: true,
   legacyHeaders:   false,
-  message: { message: 'Too many requests, please slow down' },
+  message:         { message: 'Too many requests, please slow down' },
 }))
 
-app.use('/api/auth/login',    rateLimit({ windowMs: 15*60*1000, max: 10 }))
+app.use('/api/auth/login',    rateLimit({ windowMs: 15*60*1000, max: 20 }))
 app.use('/api/auth/register', rateLimit({ windowMs: 15*60*1000, max: 10 }))
 
 // ── Body parsing ──────────────────────────────────────────────────────────────
@@ -68,8 +78,8 @@ app.use(express.json({ limit: '10kb' }))
 app.use(express.urlencoded({ extended: true }))
 if (!isProd) app.use(morgan('dev'))
 
-// ── Health check (Railway uses this to confirm server is up) ──────────────────
-app.get('/',         (req, res) => res.json({ status: 'ok', service: 'GHQ API' }))
+// ── Health check ──────────────────────────────────────────────────────────────
+app.get('/',          (req, res) => res.json({ status: 'ok', service: 'GHQ API' }))
 app.get('/api/health',(req, res) => res.json({
   status:  'ok',
   service: 'GHQ API 🎮',
@@ -87,10 +97,9 @@ app.use('/api/wallet',      walletRoutes)
 app.use('/api/withdraw',    withdrawRoutes)
 app.use('/api/ads',         adRoutes)
 
-// ── 404 + Global error ────────────────────────────────────────────────────────
+// ── 404 + Error handler ───────────────────────────────────────────────────────
 app.use('*', (req, res) => res.status(404).json({ message: `Route ${req.originalUrl} not found` }))
 app.use((err, req, res, next) => {
-  // Don't log CORS errors in production (too noisy)
   if (!err.message?.includes('CORS')) console.error('Server error:', err.message)
   res.status(err.status || 500).json({ message: err.message || 'Internal server error' })
 })
@@ -104,10 +113,9 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('  ██║   ██║██╔══██║██║▄▄ ██║')
   console.log('  ╚██████╔╝██║  ██║╚██████╔╝')
   console.log('')
-  console.log(`  🎮 GHQ API      →  http://0.0.0.0:${PORT}`)
-  console.log(`  🌍 Environment  →  ${process.env.NODE_ENV}`)
-  console.log(`  🪙 UPI ID       →  ${process.env.UPI_ID || 'NOT SET'}`)
-  console.log(`  🔗 CORS origins →  ${allowedOrigins.join(', ')}`)
+  console.log(`  🎮 GHQ API  →  port ${PORT}`)
+  console.log(`  🌍 Env      →  ${process.env.NODE_ENV}`)
+  console.log(`  🔗 CORS     →  *.vercel.app + ${process.env.CLIENT_URL || 'CLIENT_URL not set'}`)
   console.log('')
   startScheduler()
 })
