@@ -8,13 +8,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 
-  <!--
-    ══════════════════════════════════════════════════════════
-    GOOGLE ADSENSE — Replace YOUR_PUB_ID with your real ID
-    Format: ca-pub-XXXXXXXXXXXXXXXX
-    Get it from: https://adsense.google.com → Account → Account info
-    ══════════════════════════════════════════════════════════
-  -->
+  <!-- Google Sign In SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- Google AdSense — replace YOUR_PUB_ID after approval -->
   <script
     async
     src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
@@ -29,8 +26,6 @@
     ::-webkit-scrollbar-track { background: #050810; }
     ::-webkit-scrollbar-thumb { background: #00f5ff44; border-radius: 2px; }
     ::selection { background: #00f5ff33; color: #00f5ff; }
-
-    /* AdSense containers — keep ads visible and correctly sized */
     .ghq-ad-wrap { display: block; width: 100%; overflow: hidden; }
     .ghq-ad-wrap ins { display: block !important; }
   </style>

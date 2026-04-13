@@ -25,9 +25,10 @@ const request = async (endpoint, options = {}) => {
 }
 
 export const authAPI = {
-  register: (body) => request('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
-  login:    (body) => request('/auth/login',    { method: 'POST', body: JSON.stringify(body) }),
-  getMe:    ()     => request('/auth/me'),
+  register:   (body)    => request('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
+  login:      (body)    => request('/auth/login',    { method: 'POST', body: JSON.stringify(body) }),
+  getMe:      ()        => request('/auth/me'),
+  googleAuth: (idToken) => request('/auth/google',   { method: 'POST', body: JSON.stringify({ idToken }) }),
 }
 
 export const userAPI = {
@@ -89,14 +90,12 @@ export const withdrawAPI = {
 }
 
 export const adAPI = {
-  // Public
-  getActive:   (placement) => request(`/ads${placement ? `?placement=${placement}` : ''}`),
+  getActive:   (placement)    => request(`/ads${placement ? `?placement=${placement}` : ''}`),
   getGateAds:  (tournamentId) => request(`/ads/gate/${tournamentId}`),
-  // Admin
-  getAll:      ()     => request('/ads/admin/all'),
-  create:      (body) => request('/ads/admin', { method: 'POST', body: JSON.stringify(body) }),
-  update:      (id, body) => request(`/ads/admin/${id}`, { method: 'PUT',    body: JSON.stringify(body) }),
-  delete:      (id)   => request(`/ads/admin/${id}`,     { method: 'DELETE' }),
+  getAll:      ()             => request('/ads/admin/all'),
+  create:      (body)         => request('/ads/admin', { method: 'POST', body: JSON.stringify(body) }),
+  update:      (id, body)     => request(`/ads/admin/${id}`, { method: 'PUT',    body: JSON.stringify(body) }),
+  delete:      (id)           => request(`/ads/admin/${id}`, { method: 'DELETE' }),
 }
 
 export default request

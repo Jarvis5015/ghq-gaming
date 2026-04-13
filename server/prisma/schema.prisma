@@ -1,5 +1,4 @@
-// Prisma schema — GHQ Database v7
-// Fixed: all enum values on separate lines (Prisma requirement)
+// Prisma schema — GHQ Database v8 — added googleId for OAuth
 
 generator client {
   provider = "prisma-client-js"
@@ -15,16 +14,17 @@ model User {
   id           Int      @id @default(autoincrement())
   username     String   @unique
   email        String   @unique
-  passwordHash String
+  passwordHash String   @default("")   // empty for Google-only accounts
   avatar       String   @default("")
   role         Role     @default(PLAYER)
+  googleId     String?  @unique        // Google's user ID for OAuth accounts
 
-  gollers      Int      @default(500)
+  gollers      Int      @default(0)
   totalBought  Int      @default(0)
   totalSpent   Int      @default(0)
 
-  coins        Int      @default(500)
-  totalEarned  Int      @default(500)
+  coins        Int      @default(100)
+  totalEarned  Int      @default(100)
 
   wins         Int      @default(0)
   losses       Int      @default(0)

@@ -9,6 +9,12 @@ const getSavedUser = () => {
   } catch { return null }
 }
 
+const saveSession = (data, set) => {
+  localStorage.setItem('ghq_token', data.token)
+  localStorage.setItem('ghq_user',  JSON.stringify(data.user))
+  set({ user: data.user, token: data.token, isLoggedIn: true, isLoading: false, error: null })
+}
+
 const useAuthStore = create((set, get) => ({
   user:       getSavedUser(),
   token:      localStorage.getItem('ghq_token') || null,
@@ -20,9 +26,7 @@ const useAuthStore = create((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const data = await authAPI.register({ username, email, password, platform })
-      localStorage.setItem('ghq_token', data.token)
-      localStorage.setItem('ghq_user',  JSON.stringify(data.user))
-      set({ user: data.user, token: data.token, isLoggedIn: true, isLoading: false, error: null })
+      saveSession(data, set)
       return { success: true }
     } catch (err) {
       set({ error: err.message, isLoading: false })
@@ -34,10 +38,21 @@ const useAuthStore = create((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const data = await authAPI.login({ email, password })
-      localStorage.setItem('ghq_token', data.token)
-      localStorage.setItem('ghq_user',  JSON.stringify(data.user))
-      set({ user: data.user, token: data.token, isLoggedIn: true, isLoading: false, error: null })
+      saveSession(data, set)
       return { success: true }
+    } catch (err) {
+      set({ error: err.message, isLoading: false })
+      return { success: false, message: err.message }
+    }
+  },
+
+  // ── Google Sign In ────────────────────────────────────────────────────────
+  googleLogin: async (idToken) => {
+    set({ isLoading: true, error: null })
+    try {
+      const data = await authAPI.googleAuth(idToken)
+      saveSession(data, set)
+      return { success: true, isNewUser: data.isNewUser, message: data.message }
     } catch (err) {
       set({ error: err.message, isLoading: false })
       return { success: false, message: err.message }
@@ -62,7 +77,6 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Update any user fields in store (e.g. after Gollers change)
   updateUser: (updates) => {
     const current = get().user
     if (!current) return
@@ -71,7 +85,6 @@ const useAuthStore = create((set, get) => ({
     set({ user: updated })
   },
 
-  // Quickly update Gollers balance without full refresh
   updateGollers: (newBalance) => {
     const current = get().user
     if (!current) return

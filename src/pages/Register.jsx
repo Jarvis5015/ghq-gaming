@@ -2,15 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import useAuthStore from '../store/useAuthStore'
+import GoogleSignInButton from '../components/ui/GoogleSignInButton'
 
 export default function Register() {
   const navigate = useNavigate()
   const { register, isLoading, error, clearError } = useAuthStore()
-
   const [step, setStep] = useState(1)
-  const [form, setForm] = useState({
-    username: '', email: '', password: '', platform: 'PC',
-  })
+  const [form, setForm] = useState({ username: '', email: '', password: '', platform: 'PC' })
   const [fieldErrors, setFieldErrors] = useState({})
 
   const handleChange = (e) => {
@@ -19,7 +17,6 @@ export default function Register() {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  // Basic client-side validation for step 1
   const validateStep1 = () => {
     const errs = {}
     if (form.username.length < 3) errs.username = 'At least 3 characters'
@@ -37,9 +34,7 @@ export default function Register() {
 
   const handleSubmit = async () => {
     const result = await register(form.username, form.email, form.password, form.platform)
-    if (result.success) {
-      navigate('/')
-    }
+    if (result.success) navigate('/')
   }
 
   const inputCls = "w-full px-4 py-3 bg-[#050810] border text-[#e8eaf6] font-body text-sm placeholder-[#4a5568]/50 focus:outline-none transition-colors"
@@ -71,13 +66,13 @@ export default function Register() {
               <p className="font-body text-sm text-[#4a5568] mt-1">Create your GHQ account</p>
             </div>
 
-            {/* Step progress bar */}
+            {/* Step progress */}
             <div className="flex items-center gap-2 mb-8">
-              <div className="flex-1 h-0.5 bg-[#00f5ff] transition-all duration-500" />
+              <div className="flex-1 h-0.5 bg-[#00f5ff]" />
               <div className={`flex-1 h-0.5 transition-all duration-500 ${step >= 2 ? 'bg-[#00f5ff]' : 'bg-[#1a2545]'}`} />
             </div>
 
-            {/* Server error */}
+            {/* Error */}
             {error && (
               <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
                 className="mb-5 px-4 py-3 border border-[#ff2d55]/30 bg-[#ff2d55]/10 flex items-center gap-2">
@@ -88,100 +83,66 @@ export default function Register() {
 
             <AnimatePresence mode="wait">
               {step === 1 ? (
-                <motion.form
-                  key="step1"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  onSubmit={handleNext}
-                  className="space-y-4"
-                >
-                  {/* Username */}
+                <motion.form key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }} onSubmit={handleNext} className="space-y-4">
                   <div>
                     <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Username</label>
-                    <input
-                      type="text" name="username" value={form.username}
-                      onChange={handleChange} placeholder="YourGamerTag" required
-                      className={`${inputCls} ${fieldErrors.username ? 'border-[#ff2d55]/50' : 'border-[#1a2545] focus:border-[#00f5ff]/50'}`}
-                    />
-                    {fieldErrors.username && (
-                      <p className="font-mono text-[10px] text-[#ff2d55] mt-1">{fieldErrors.username}</p>
-                    )}
+                    <input type="text" name="username" value={form.username} onChange={handleChange}
+                      placeholder="YourGamerTag" required
+                      className={`${inputCls} ${fieldErrors.username ? 'border-[#ff2d55]/50' : 'border-[#1a2545] focus:border-[#00f5ff]/50'}`} />
+                    {fieldErrors.username && <p className="font-mono text-[10px] text-[#ff2d55] mt-1">{fieldErrors.username}</p>}
                   </div>
-
-                  {/* Email */}
                   <div>
                     <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Email</label>
-                    <input
-                      type="email" name="email" value={form.email}
-                      onChange={handleChange} placeholder="player@ghq.gg" required
-                      className={`${inputCls} ${fieldErrors.email ? 'border-[#ff2d55]/50' : 'border-[#1a2545] focus:border-[#00f5ff]/50'}`}
-                    />
-                    {fieldErrors.email && (
-                      <p className="font-mono text-[10px] text-[#ff2d55] mt-1">{fieldErrors.email}</p>
-                    )}
+                    <input type="email" name="email" value={form.email} onChange={handleChange}
+                      placeholder="player@ghq.gg" required
+                      className={`${inputCls} ${fieldErrors.email ? 'border-[#ff2d55]/50' : 'border-[#1a2545] focus:border-[#00f5ff]/50'}`} />
+                    {fieldErrors.email && <p className="font-mono text-[10px] text-[#ff2d55] mt-1">{fieldErrors.email}</p>}
                   </div>
-
-                  {/* Password */}
                   <div>
                     <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Password</label>
-                    <input
-                      type="password" name="password" value={form.password}
-                      onChange={handleChange} placeholder="Min 6 characters" required
-                      className={`${inputCls} ${fieldErrors.password ? 'border-[#ff2d55]/50' : 'border-[#1a2545] focus:border-[#00f5ff]/50'}`}
-                    />
-                    {fieldErrors.password && (
-                      <p className="font-mono text-[10px] text-[#ff2d55] mt-1">{fieldErrors.password}</p>
-                    )}
+                    <input type="password" name="password" value={form.password} onChange={handleChange}
+                      placeholder="Min 6 characters" required
+                      className={`${inputCls} ${fieldErrors.password ? 'border-[#ff2d55]/50' : 'border-[#1a2545] focus:border-[#00f5ff]/50'}`} />
+                    {fieldErrors.password && <p className="font-mono text-[10px] text-[#ff2d55] mt-1">{fieldErrors.password}</p>}
                   </div>
 
                   <button type="submit"
                     className="relative w-full py-3.5 overflow-hidden group mt-2"
                     style={{ clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%)' }}>
                     <div className="absolute inset-0 bg-[#00f5ff] group-hover:bg-[#00f5ff]/85 transition-colors" />
-                    <span className="relative font-display font-bold text-sm tracking-widest uppercase text-[#050810]">
-                      Continue →
-                    </span>
+                    <span className="relative font-display font-bold text-sm tracking-widest uppercase text-[#050810]">Continue →</span>
                   </button>
+
+                  {/* Google Sign In on step 1 — below Continue button */}
+                  <GoogleSignInButton redirectTo="/" label="Sign up with Google" />
                 </motion.form>
 
               ) : (
-                <motion.div
-                  key="step2"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  className="space-y-5"
-                >
-                  {/* Platform selection */}
+                <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }} className="space-y-5">
                   <div>
-                    <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-3">
-                      Primary Platform
-                    </label>
+                    <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-3">Primary Platform</label>
                     <div className="grid grid-cols-3 gap-3">
                       {[['PC', '🖥️'], ['Mobile', '📱'], ['Both', '🎮']].map(([p, icon]) => (
-                        <button key={p} type="button"
-                          onClick={() => setForm({ ...form, platform: p })}
+                        <button key={p} type="button" onClick={() => setForm({ ...form, platform: p })}
                           className={`py-4 border font-display font-semibold text-xs tracking-wider uppercase transition-all ${
                             form.platform === p
                               ? 'border-[#00f5ff] text-[#00f5ff] bg-[#00f5ff]/10'
-                              : 'border-[#1a2545] text-[#4a5568] hover:border-[#1a2545]/80 hover:text-white'
+                              : 'border-[#1a2545] text-[#4a5568] hover:text-white'
                           }`}>
-                          <div className="text-2xl mb-1">{icon}</div>
-                          {p}
+                          <div className="text-2xl mb-1">{icon}</div>{p}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Welcome bonus */}
                   <div className="p-4 border border-[#ffd700]/20 bg-[#ffd700]/5">
                     <div className="font-mono text-[9px] text-[#ffd700] tracking-widest mb-1">🎁 WELCOME BONUS</div>
-                    <div className="font-display font-bold text-2xl text-[#ffd700]">+500 ⬡</div>
-                    <div className="font-mono text-[10px] text-[#4a5568] mt-0.5">GHQ Coins credited instantly on signup</div>
+                    <div className="font-display font-bold text-2xl text-[#ffd700]">+100 ⬡</div>
+                    <div className="font-mono text-[10px] text-[#4a5568] mt-0.5">GHQ Coins credited on signup</div>
                   </div>
 
-                  {/* Summary */}
                   <div className="p-3 border border-[#1a2545] bg-[#050810]/60 space-y-1">
                     <div className="font-mono text-[9px] text-[#4a5568] tracking-wider mb-2">ACCOUNT SUMMARY</div>
                     {[['Username', form.username], ['Email', form.email], ['Platform', form.platform]].map(([l, v]) => (
@@ -192,10 +153,7 @@ export default function Register() {
                     ))}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={isLoading}
+                  <button type="button" onClick={handleSubmit} disabled={isLoading}
                     className="relative w-full py-3.5 overflow-hidden group disabled:opacity-60 disabled:cursor-not-allowed"
                     style={{ clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%)' }}>
                     <div className="absolute inset-0 bg-[#00f5ff] group-hover:bg-[#00f5ff]/85 transition-colors" />
@@ -212,7 +170,7 @@ export default function Register() {
               )}
             </AnimatePresence>
 
-            <div className="mt-6 text-center">
+            <div className="mt-5 text-center">
               <span className="font-body text-sm text-[#4a5568]">Already a player? </span>
               <Link to="/login" className="font-display text-sm text-[#00f5ff] hover:text-white transition-colors tracking-wider uppercase">
                 Sign In
