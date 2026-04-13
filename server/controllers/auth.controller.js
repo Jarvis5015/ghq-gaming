@@ -6,22 +6,17 @@ const prisma = require('../config/db')
 const generateToken = (userId) =>
   jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' })
 
-// Returns safe user object (no password hash)
-// Includes both gollers (real currency) and coins (earned currency)
 const safeUser = (user) => ({
   id:          user.id,
   username:    user.username,
   email:       user.email,
   avatar:      user.avatar,
   role:        user.role,
-  // 🪙 Gollers wallet
   gollers:     user.gollers,
   totalBought: user.totalBought,
   totalSpent:  user.totalSpent,
-  // GHQ Coins (earned)
   coins:       user.coins,
   totalEarned: user.totalEarned,
-  // Stats
   wins:        user.wins,
   losses:      user.losses,
   rank:        user.rank,
@@ -31,12 +26,12 @@ const safeUser = (user) => ({
 // ── POST /api/auth/register ───────────────────────────────────────────────────
 const register = async (req, res) => {
   try {
-    const { username, email, password, platform = 'PC' } = req.body
+    const { username, email, password } = req.body
 
     const existingUsername = await prisma.user.findUnique({ where: { username } })
     if (existingUsername) return res.status(400).json({ message: 'Username already taken' })
 
-    const existingEmail = await prisma.user.findUnique({ where: { email } })
+    const existingEmail = await prisma.user.findUnique({ where: { email: email.toLowerCase() } })
     if (existingEmail) return res.status(400).json({ message: 'Email already registered' })
 
     const passwordHash = await bcrypt.hash(password, 12)
@@ -48,27 +43,28 @@ const register = async (req, res) => {
         email:        email.toLowerCase(),
         passwordHash,
         avatar,
-        gollers:      100,   // welcome Gollers bonus
-        totalBought:  100,
-        coins:        500,   // welcome GHQ Coins
-        totalEarned:  500,
+        gollers:      0,    // no free Gollars — players must buy them
+        totalBought:  0,
+        totalSpent:   0,
+        coins:        100,  // 100 GHQ Coins welcome bonus
+        totalEarned:  100,
       },
     })
 
-    // Log the welcome Goller bonus
+    // Log welcome coins transaction
     await prisma.coinTransaction.create({
       data: {
         userId: user.id,
         type:   'EARN',
-        amount: 500,
-        label:  '🎉 Welcome bonus — 500 GHQ Coins',
+        amount: 100,
+        label:  '🎉 Welcome bonus — 100 GHQ Coins',
       },
     })
 
     const token = generateToken(user.id)
 
     res.status(201).json({
-      message: 'Account created! You received 100 🪙 Gollers + 500 GHQ Coins as a welcome bonus.',
+      message: 'Account created! You received 100 GHQ Coins as a welcome bonus.',
       token,
       user: safeUser(user),
     })
@@ -83,7 +79,11 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body
 
-    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } })
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' })
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } })
     if (!user) return res.status(401).json({ message: 'Invalid email or password' })
     if (!user.isActive) return res.status(401).json({ message: 'Account has been deactivated' })
 
