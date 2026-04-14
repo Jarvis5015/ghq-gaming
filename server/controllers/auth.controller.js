@@ -43,10 +43,10 @@ const register = async (req, res) => {
         email:        email.toLowerCase(),
         passwordHash,
         avatar,
-        gollers:      0,    // no free Gollars — players must buy them
+        gollers:      0,
         totalBought:  0,
         totalSpent:   0,
-        coins:        100,  // 100 GHQ Coins welcome bonus
+        coins:        100,
         totalEarned:  100,
       },
     })
@@ -76,10 +76,7 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body
-
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' })
-    }
+    if (!email || !password) return res.status(400).json({ message: 'Email and password are required' })
 
     const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } })
     if (!user) return res.status(401).json({ message: 'Invalid email or password' })
@@ -97,67 +94,59 @@ const login = async (req, res) => {
 }
 
 // ── POST /api/auth/google ─────────────────────────────────────────────────────
-// Verify Google ID token, create account if new user, return JWT
 const googleAuth = async (req, res) => {
   try {
     const { idToken } = req.body
     if (!idToken) return res.status(400).json({ message: 'Google token is required' })
 
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
-
     if (!GOOGLE_CLIENT_ID) {
-      return res.status(500).json({ message: 'Google Sign In is not configured on this server' })
+      console.error('GOOGLE_CLIENT_ID environment variable is not set!')
+      return res.status(500).json({ message: 'Google Sign In is not configured. Please contact support.' })
     }
 
-    // Verify the token with Google
-    const { OAuth2Client } = require('google-auth-library')
-    const client  = new OAuth2Client(GOOGLE_CLIENT_ID)
+    // Verify token with Google
     let payload
-
     try {
+      const { OAuth2Client } = require('google-auth-library')
+      const client = new OAuth2Client(GOOGLE_CLIENT_ID)
       const ticket = await client.verifyIdToken({
         idToken,
         audience: GOOGLE_CLIENT_ID,
       })
       payload = ticket.getPayload()
     } catch (verifyErr) {
-      console.error('Google token verify failed:', verifyErr.message)
+      console.error('Google token verification failed:', verifyErr.message)
       return res.status(401).json({ message: 'Invalid Google token — please try again' })
     }
 
-    const { email, name, sub: googleId, picture } = payload
-
+    const { email, name, sub: googleId } = payload
     if (!email) return res.status(400).json({ message: 'Could not get email from Google account' })
 
-    // Check if user already exists
+    // Find or create user
     let user      = await prisma.user.findUnique({ where: { email: email.toLowerCase() } })
     let isNewUser = false
 
     if (!user) {
-      // New user — create account from Google profile
       isNewUser = true
 
-      // Build a clean username from their name (unique)
+      // Build unique username from Google name
       let baseUsername = (name || email.split('@')[0])
         .replace(/[^a-zA-Z0-9_]/g, '')
-        .slice(0, 18)
-        || 'Player'
+        .slice(0, 18) || 'Player'
 
-      // Make username unique if taken
       let username = baseUsername
       let suffix   = 1
       while (await prisma.user.findUnique({ where: { username } })) {
         username = `${baseUsername}${suffix++}`
       }
 
-      const avatar = username.slice(0, 2).toUpperCase()
-
       user = await prisma.user.create({
         data: {
           username,
           email:        email.toLowerCase(),
-          passwordHash: await bcrypt.hash(googleId, 12), // not used for login but required by schema
-          avatar,
+          passwordHash: await bcrypt.hash(googleId, 12),
+          avatar:       username.slice(0, 2).toUpperCase(),
           gollers:      0,
           totalBought:  0,
           totalSpent:   0,
@@ -181,7 +170,6 @@ const googleAuth = async (req, res) => {
     }
 
     const token = generateToken(user.id)
-
     res.json({
       message:   isNewUser ? `Welcome to GHQ, ${user.username}! 🎮 +100 GHQ Coins added.` : 'Welcome back!',
       token,
