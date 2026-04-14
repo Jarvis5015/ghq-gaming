@@ -4,16 +4,17 @@ import useStore from '../store/useStore'
 import AdminWallet from './AdminWallet'
 import AdminTournaments from './AdminTournaments'
 import AdminWithdraw from './AdminWithdraw'
+import AdminCoinSettings from './AdminCoinSettings'
 
 function AdminSidebar({ active, setActive }) {
   const navItems = [
-    { id: 'dashboard',   icon: '📊', label: 'Dashboard'        },
-    { id: 'tournaments', icon: '🏆', label: 'Tournaments'      },
-    { id: 'wallet',      icon: '🪙', label: 'Gollar Top-Ups'   },
-    { id: 'withdraw',    icon: '💸', label: 'Withdrawals'      },
-    { id: 'players',     icon: '👥', label: 'Players'          },
-    { id: 'economy',     icon: '⬡',  label: 'Economy'          },
-    { id: 'settings',    icon: '⚙️', label: 'Settings'         },
+    { id: 'dashboard',     icon: '📊', label: 'Dashboard'        },
+    { id: 'tournaments',   icon: '🏆', label: 'Tournaments'      },
+    { id: 'wallet',        icon: '🪙', label: 'Gollar Top-Ups'   },
+    { id: 'withdraw',      icon: '💸', label: 'Withdrawals'      },
+    { id: 'players',       icon: '👥', label: 'Players'          },
+    { id: 'coin-settings', icon: '⬡',  label: 'Coin Settings'    },
+    { id: 'settings',      icon: '⚙️', label: 'Settings'         },
   ]
   return (
     <aside className="w-56 flex-shrink-0 border-r border-[#1a2545] bg-[#0a0f1e] flex flex-col min-h-screen">
@@ -55,9 +56,9 @@ function StatBox({ label, value, color = '#00f5ff', icon }) {
 }
 
 function DashboardPanel({ setActive }) {
-  const { tournaments, fetchTournaments } = useStore()
-  const live     = tournaments.filter(t => t.status === 'LIVE')
-  const upcoming = tournaments.filter(t => t.status === 'UPCOMING')
+  const { tournaments } = useStore()
+  const live       = tournaments.filter(t => t.status === 'LIVE')
+  const upcoming   = tournaments.filter(t => t.status === 'UPCOMING')
   const totalPrize = tournaments.reduce((s, t) => s + (t.prizePool || 0), 0)
 
   return (
@@ -76,10 +77,10 @@ function DashboardPanel({ setActive }) {
         <div className="font-display font-bold text-lg text-white mb-4">QUICK LINKS</div>
         <div className="grid grid-cols-2 gap-3">
           {[
-            ['🏆 Manage Tournaments', 'tournaments'],
-            ['💸 Withdrawal Requests','withdraw'    ],
-            ['🪙 Verify Gollar Top-Ups','wallet'    ],
-            ['👥 View Players',       'players'    ],
+            ['🏆 Manage Tournaments',  'tournaments'   ],
+            ['💸 Withdrawal Requests', 'withdraw'      ],
+            ['🪙 Verify Gollar Top-Ups','wallet'       ],
+            ['⬡ Coin Settings',        'coin-settings' ],
           ].map(([l, target]) => (
             <button key={l} onClick={() => setActive(target)}
               className="border border-[#1a2545] p-4 font-display text-sm text-[#4a5568] hover:text-white hover:border-[#00f5ff]/30 transition-all text-left">
@@ -141,49 +142,6 @@ function PlayersPanel() {
   )
 }
 
-function EconomyPanel() {
-  const [form, setForm] = useState({ username: '', amount: '', reason: '' })
-  const [msg,  setMsg]  = useState('')
-
-  const handleGrant = async (e) => {
-    e.preventDefault()
-    try {
-      const { economyAPI } = await import('../services/api')
-      await economyAPI.adminGrant({ username: form.username, amount: Number(form.amount), reason: form.reason })
-      setMsg(`✓ ${form.amount} coins granted to ${form.username}`)
-      setForm({ username:'', amount:'', reason:'' })
-      setTimeout(() => setMsg(''), 3000)
-    } catch (err) {
-      setMsg(`✗ ${err.message}`)
-    }
-  }
-
-  return (
-    <div className="space-y-8">
-      <div>
-        <div className="font-mono text-[10px] text-[#4a5568] tracking-widest mb-1">Economy</div>
-        <h2 className="font-display font-bold text-3xl text-white">GHQ COIN MANAGEMENT</h2>
-      </div>
-      <div className="max-w-md border border-[#1a2545] bg-[#0a0f1e] p-6">
-        <h3 className="font-display font-semibold text-lg text-white mb-5">GRANT GHQ COINS TO PLAYER</h3>
-        {msg && <div className={`mb-4 p-3 border font-mono text-xs ${msg.startsWith('✓')?'border-[#00ff88]/30 bg-[#00ff88]/10 text-[#00ff88]':'border-[#ff2d55]/30 bg-[#ff2d55]/10 text-[#ff2d55]'}`}>{msg}</div>}
-        <form onSubmit={handleGrant} className="space-y-3">
-          {[['Username','username','Player username','text'],['Amount (⬡)','amount','e.g. 500','number'],['Reason','reason','Tournament prize adjustment','text']].map(([label,key,ph,type]) => (
-            <div key={key}>
-              <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1">{label}</label>
-              <input type={type} value={form[key]} onChange={e => setForm({...form,[key]:e.target.value})} placeholder={ph}
-                className="w-full px-3 py-2.5 bg-[#050810] border border-[#1a2545] text-[#e8eaf6] font-body text-sm placeholder-[#4a5568]/50 focus:outline-none focus:border-[#00f5ff]/40 transition-colors" />
-            </div>
-          ))}
-          <button type="submit" className="w-full py-2.5 font-display font-bold text-xs tracking-widest uppercase border border-[#00ff88]/40 text-[#00ff88] hover:bg-[#00ff88]/10 transition-all mt-2">
-            Grant GHQ Coins ⬡
-          </button>
-        </form>
-      </div>
-    </div>
-  )
-}
-
 function SettingsPanel() {
   const [saved, setSaved] = useState(false)
   const [toggles, setToggles] = useState([
@@ -192,7 +150,7 @@ function SettingsPanel() {
     { label: 'Paid Tournaments',   desc: 'Allow paid tournaments',       on: true  },
     { label: 'Gollar Top-Ups',     desc: 'Allow players to buy Gollars', on: true  },
     { label: 'Withdrawals',        desc: 'Allow Gollar withdrawals',     on: true  },
-    { label: 'Daily Login Bonus',  desc: 'Grant 25 coins on login',      on: true  },
+    { label: 'Daily Login Bonus',  desc: 'Daily bonus claimable',        on: true  },
     { label: 'Maintenance Mode',   desc: 'Take platform offline',        on: false },
   ])
   return (
@@ -232,13 +190,13 @@ export default function Admin() {
   const [activePanel, setActivePanel] = useState('dashboard')
 
   const panels = {
-    dashboard:   <DashboardPanel setActive={setActivePanel} />,
-    tournaments: <AdminTournaments />,
-    wallet:      <AdminWallet />,
-    withdraw:    <AdminWithdraw />,
-    players:     <PlayersPanel />,
-    economy:     <EconomyPanel />,
-    settings:    <SettingsPanel />,
+    dashboard:     <DashboardPanel setActive={setActivePanel} />,
+    tournaments:   <AdminTournaments />,
+    wallet:        <AdminWallet />,
+    withdraw:      <AdminWithdraw />,
+    players:       <PlayersPanel />,
+    'coin-settings': <AdminCoinSettings />,
+    settings:      <SettingsPanel />,
   }
 
   return (

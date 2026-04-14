@@ -44,11 +44,11 @@ export const tournamentAPI = {
     const qs    = new URLSearchParams(clean).toString()
     return request(`/tournaments${qs ? `?${qs}` : ''}`)
   },
-  getById:          (id)       => request(`/tournaments/${id}`),
-  getBracket:       (id)       => request(`/tournaments/${id}/bracket`),
-  create:           (body)     => request('/tournaments', { method: 'POST', body: JSON.stringify(body) }),
-  update:           (id, body) => request(`/tournaments/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
-  announceResults:  (id, body) => request(`/tournaments/${id}/announce-results`, { method: 'POST', body: JSON.stringify(body) }),
+  getById:         (id)       => request(`/tournaments/${id}`),
+  getBracket:      (id)       => request(`/tournaments/${id}/bracket`),
+  create:          (body)     => request('/tournaments', { method: 'POST', body: JSON.stringify(body) }),
+  update:          (id, body) => request(`/tournaments/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  announceResults: (id, body) => request(`/tournaments/${id}/announce-results`, { method: 'POST', body: JSON.stringify(body) }),
 }
 
 export const economyAPI = {
@@ -71,31 +71,37 @@ export const gameAPI = {
 }
 
 export const walletAPI = {
-  getBalance:      ()       => request('/wallet/balance'),
-  getHistory:      ()       => request('/wallet/history'),
-  initiateTopUp:   (amount) => request('/wallet/initiate-topup', { method: 'POST', body: JSON.stringify({ amount }) }),
-  submitCode:      (code)   => request('/wallet/submit-code',    { method: 'POST', body: JSON.stringify({ code }) }),
-  getTopUpStatus:  ()       => request('/wallet/topup-status'),
-  joinTournament:  (tournamentId) => request('/wallet/join-tournament', { method: 'POST', body: JSON.stringify({ tournamentId }) }),
-  getPending:      (status = 'SUBMITTED') => request(`/wallet/pending?status=${status}`),
-  verify:          (code)   => request('/wallet/verify', { method: 'POST', body: JSON.stringify({ code }) }),
+  getBalance:     ()       => request('/wallet/balance'),
+  getHistory:     ()       => request('/wallet/history'),
+  initiateTopUp:  (amount) => request('/wallet/initiate-topup', { method: 'POST', body: JSON.stringify({ amount }) }),
+  submitCode:     (code)   => request('/wallet/submit-code',    { method: 'POST', body: JSON.stringify({ code }) }),
+  getTopUpStatus: ()       => request('/wallet/topup-status'),
+  joinTournament: (tournamentId) => request('/wallet/join-tournament', { method: 'POST', body: JSON.stringify({ tournamentId }) }),
+  getPending:     (status = 'SUBMITTED') => request(`/wallet/pending?status=${status}`),
+  verify:         (code)   => request('/wallet/verify', { method: 'POST', body: JSON.stringify({ code }) }),
 }
 
 export const withdrawAPI = {
-  request:       (body)      => request('/withdraw/request', { method: 'POST', body: JSON.stringify(body) }),
-  getMyRequests: ()          => request('/withdraw/my-requests'),
-  getAll:        (status)    => request(`/withdraw/admin/all${status ? `?status=${status}` : ''}`),
-  markPaid:      (id)        => request(`/withdraw/admin/${id}/pay`,    { method: 'POST' }),
-  reject:        (id, note)  => request(`/withdraw/admin/${id}/reject`, { method: 'POST', body: JSON.stringify({ note }) }),
+  request:       (body)     => request('/withdraw/request',              { method: 'POST', body: JSON.stringify(body) }),
+  getMyRequests: ()         => request('/withdraw/my-requests'),
+  getAll:        (status)   => request(`/withdraw/admin/all${status ? `?status=${status}` : ''}`),
+  markPaid:      (id)       => request(`/withdraw/admin/${id}/pay`,      { method: 'POST' }),
+  reject:        (id, note) => request(`/withdraw/admin/${id}/reject`,   { method: 'POST', body: JSON.stringify({ note }) }),
 }
 
 export const adAPI = {
-  getActive:   (placement)    => request(`/ads${placement ? `?placement=${placement}` : ''}`),
-  getGateAds:  (tournamentId) => request(`/ads/gate/${tournamentId}`),
-  getAll:      ()             => request('/ads/admin/all'),
-  create:      (body)         => request('/ads/admin', { method: 'POST', body: JSON.stringify(body) }),
-  update:      (id, body)     => request(`/ads/admin/${id}`, { method: 'PUT',    body: JSON.stringify(body) }),
-  delete:      (id)           => request(`/ads/admin/${id}`, { method: 'DELETE' }),
+  getActive:  (placement)    => request(`/ads${placement ? `?placement=${placement}` : ''}`),
+  getGateAds: (tournamentId) => request(`/ads/gate/${tournamentId}`),
+  getAll:     ()             => request('/ads/admin/all'),
+  create:     (body)         => request('/ads/admin',     { method: 'POST',   body: JSON.stringify(body) }),
+  update:     (id, body)     => request(`/ads/admin/${id}`, { method: 'PUT',  body: JSON.stringify(body) }),
+  delete:     (id)           => request(`/ads/admin/${id}`, { method: 'DELETE' }),
+}
+
+export const configAPI = {
+  getPublic: () => request('/config/public'),
+  getAdmin:  () => request('/config/admin'),
+  save:      (updates) => request('/config/admin', { method: 'PUT', body: JSON.stringify({ updates }) }),
 }
 
 export default request

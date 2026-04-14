@@ -1,16 +1,13 @@
 // controllers/economy.controller.js
-// Handles: get balance, coin history, earn coins, achievements
-
-const prisma = require('../config/db')
+const prisma           = require('../config/db')
+const { getConfigValue } = require('./config.controller')
 
 // ── GET /api/economy/balance ──────────────────────────────────────────────────
 const getBalance = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      select: {
-        coins: true, totalEarned: true, totalSpent: true,
-      },
+      where:  { id: req.user.id },
+      select: { coins: true, totalEarned: true, totalSpent: true },
     })
     res.json(user)
   } catch (error) {
@@ -27,27 +24,29 @@ const getTransactions = async (req, res) => {
 
     const [transactions, total] = await Promise.all([
       prisma.coinTransaction.findMany({
-        where: { userId: req.user.id },
+        where:   { userId: req.user.id },
         orderBy: { createdAt: 'desc' },
-        take: Number(limit),
+        take:    Number(limit),
         skip,
       }),
       prisma.coinTransaction.count({ where: { userId: req.user.id } }),
     ])
 
     res.json({ transactions, total, page: Number(page) })
-
   } catch (error) {
     console.error('GetTransactions error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 }
 
-// ── POST /api/economy/daily-bonus ────────────────────────────────────────────
+// ── POST /api/economy/daily-bonus ─────────────────────────────────────────────
+// Amount is pulled from PlatformConfig — admin can change it anytime
 const claimDailyBonus = async (req, res) => {
   try {
     const userId = req.user.id
-    const BONUS = 25
+
+    // Get the current daily bonus amount from admin config
+    const BONUS = await getConfigValue('daily_bonus_coins') || 25
 
     // Check if already claimed today
     const today = new Date()
@@ -56,20 +55,19 @@ const claimDailyBonus = async (req, res) => {
     const alreadyClaimed = await prisma.coinTransaction.findFirst({
       where: {
         userId,
-        label: { contains: 'Daily bonus' },
+        label:     { contains: 'Daily bonus' },
         createdAt: { gte: today },
       },
     })
 
     if (alreadyClaimed) {
-      return res.status(400).json({ message: 'Daily bonus already claimed today' })
+      return res.status(400).json({ message: 'Daily bonus already claimed today. Come back tomorrow!' })
     }
 
-    // Grant the bonus
     const [user] = await prisma.$transaction([
       prisma.user.update({
         where: { id: userId },
-        data: {
+        data:  {
           coins:       { increment: BONUS },
           totalEarned: { increment: BONUS },
         },
@@ -85,11 +83,10 @@ const claimDailyBonus = async (req, res) => {
     ])
 
     res.json({
-      message: `Daily bonus claimed! +${BONUS} coins`,
+      message:     `Daily bonus claimed! +${BONUS} ⬡ GHQ Coins`,
       coinsEarned: BONUS,
-      newBalance: user.coins,
+      newBalance:  user.coins,
     })
-
   } catch (error) {
     console.error('DailyBonus error:', error)
     res.status(500).json({ message: 'Server error' })
@@ -101,19 +98,14 @@ const getAchievements = async (req, res) => {
   try {
     const userId = req.user.id
 
-    // Get all achievements
     const allAchievements = await prisma.achievement.findMany()
-
-    // Get which ones this user has earned
     const earned = await prisma.userAchievement.findMany({
-      where: { userId },
+      where:  { userId },
       select: { achievementId: true, earnedAt: true },
     })
 
     const earnedMap = {}
-    for (const e of earned) {
-      earnedMap[e.achievementId] = e.earnedAt
-    }
+    for (const e of earned) earnedMap[e.achievementId] = e.earnedAt
 
     const achievements = allAchievements.map(a => ({
       ...a,
@@ -122,7 +114,6 @@ const getAchievements = async (req, res) => {
     }))
 
     res.json({ achievements })
-
   } catch (error) {
     console.error('GetAchievements error:', error)
     res.status(500).json({ message: 'Server error' })
@@ -135,14 +126,12 @@ const adminGrantCoins = async (req, res) => {
     const { username, amount, reason } = req.body
 
     const targetUser = await prisma.user.findUnique({ where: { username } })
-    if (!targetUser) {
-      return res.status(404).json({ message: 'User not found' })
-    }
+    if (!targetUser) return res.status(404).json({ message: 'User not found' })
 
     const [updated] = await prisma.$transaction([
       prisma.user.update({
         where: { id: targetUser.id },
-        data: {
+        data:  {
           coins:       { increment: Number(amount) },
           totalEarned: { increment: Number(amount) },
         },
@@ -158,10 +147,9 @@ const adminGrantCoins = async (req, res) => {
     ])
 
     res.json({
-      message: `Granted ${amount} coins to ${username}`,
+      message:    `✓ Granted ${amount} coins to ${username}`,
       newBalance: updated.coins,
     })
-
   } catch (error) {
     console.error('AdminGrantCoins error:', error)
     res.status(500).json({ message: 'Server error' })
