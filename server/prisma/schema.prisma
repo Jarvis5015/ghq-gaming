@@ -1,4 +1,5 @@
-// Prisma schema — GHQ Database v8 — added googleId for OAuth
+// Prisma schema — GHQ Database v8
+// Google OAuth works via email matching — no googleId column needed
 
 generator client {
   provider = "prisma-client-js"
@@ -14,10 +15,9 @@ model User {
   id           Int      @id @default(autoincrement())
   username     String   @unique
   email        String   @unique
-  passwordHash String   @default("")   // empty for Google-only accounts
+  passwordHash String   @default("")   // empty string for Google-only accounts
   avatar       String   @default("")
   role         Role     @default(PLAYER)
-  googleId     String?  @unique        // Google's user ID for OAuth accounts
 
   gollers      Int      @default(0)
   totalBought  Int      @default(0)

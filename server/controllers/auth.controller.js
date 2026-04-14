@@ -23,6 +23,113 @@ const safeUser = (user) => ({
   createdAt:   user.createdAt,
 })
 
+// ── POST /api/auth/google ─────────────────────────────────────────────────────
+// Google Sign In — match by email, create account if new
+// No googleId column needed — email is the unique identifier
+const googleAuth = async (req, res) => {
+  try {
+    const { idToken } = req.body
+    if (!idToken) return res.status(400).json({ message: 'Google token is required' })
+
+    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
+    if (!GOOGLE_CLIENT_ID) {
+      return res.status(500).json({ message: 'Google Sign In not configured on server' })
+    }
+
+    // Verify the token with Google
+    let payload
+    try {
+      const { OAuth2Client } = require('google-auth-library')
+      const client  = new OAuth2Client(GOOGLE_CLIENT_ID)
+      const ticket  = await client.verifyIdToken({
+        idToken,
+        audience: GOOGLE_CLIENT_ID,
+      })
+      payload = ticket.getPayload()
+    } catch (verifyErr) {
+      console.error('Google token verify failed:', verifyErr.message)
+      return res.status(401).json({ message: 'Invalid Google token — please try again' })
+    }
+
+    const { email, name, picture } = payload
+    if (!email) return res.status(400).json({ message: 'Could not get email from Google account' })
+
+    // Check if user already exists by email
+    let user      = await prisma.user.findUnique({ where: { email: email.toLowerCase() } })
+    let isNewUser = false
+
+    if (user) {
+      // ── Existing user — just log them in ─────────────────────────────────
+      if (!user.isActive) {
+        return res.status(401).json({ message: 'Account has been deactivated' })
+      }
+      // Update avatar with Google profile picture if they don't have one yet
+      if ((!user.avatar || user.avatar.length <= 2) && picture) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data:  { avatar: picture },
+        })
+      }
+    } else {
+      // ── New user — create account automatically ───────────────────────────
+      isNewUser = true
+
+      // Generate username from Google name
+      let baseUsername = (name || email.split('@')[0])
+        .replace(/[^a-zA-Z0-9_]/g, '')  // remove special chars
+        .slice(0, 18)
+        || 'Player'
+
+      if (baseUsername.length < 3) baseUsername = 'Player' + baseUsername
+
+      // Make sure username is unique
+      let username = baseUsername
+      let suffix   = 1
+      while (await prisma.user.findUnique({ where: { username } })) {
+        username = `${baseUsername}${suffix++}`
+      }
+
+      user = await prisma.user.create({
+        data: {
+          username,
+          email:        email.toLowerCase(),
+          passwordHash: '',   // Google users have no password
+          avatar:       picture || username.slice(0, 2).toUpperCase(),
+          gollers:      0,
+          totalBought:  0,
+          totalSpent:   0,
+          coins:        100,
+          totalEarned:  100,
+        },
+      })
+
+      // Welcome coins transaction
+      await prisma.coinTransaction.create({
+        data: {
+          userId: user.id,
+          type:   'EARN',
+          amount: 100,
+          label:  '🎉 Welcome bonus — 100 GHQ Coins',
+        },
+      })
+    }
+
+    const token = generateToken(user.id)
+    res.json({
+      message:   isNewUser
+        ? `Welcome to GHQ, ${user.username}! 🎮 You got 100 GHQ Coins.`
+        : `Welcome back, ${user.username}!`,
+      token,
+      user:      safeUser(user),
+      isNewUser,
+    })
+
+  } catch (error) {
+    console.error('Google auth error:', error)
+    res.status(500).json({ message: 'Server error during Google sign in' })
+  }
+}
+
 // ── POST /api/auth/register ───────────────────────────────────────────────────
 const register = async (req, res) => {
   try {
@@ -62,7 +169,7 @@ const register = async (req, res) => {
 
     const token = generateToken(user.id)
     res.status(201).json({
-      message: 'Account created! You received 100 GHQ Coins as a welcome bonus.',
+      message: 'Account created! You received 100 GHQ Coins.',
       token,
       user: safeUser(user),
     })
@@ -82,6 +189,13 @@ const login = async (req, res) => {
     if (!user) return res.status(401).json({ message: 'Invalid email or password' })
     if (!user.isActive) return res.status(401).json({ message: 'Account has been deactivated' })
 
+    // Google-only accounts have empty passwordHash
+    if (!user.passwordHash) {
+      return res.status(401).json({
+        message: 'This account was created with Google Sign In — please use the Google button below',
+      })
+    }
+
     const passwordMatch = await bcrypt.compare(password, user.passwordHash)
     if (!passwordMatch) return res.status(401).json({ message: 'Invalid email or password' })
 
@@ -90,95 +204,6 @@ const login = async (req, res) => {
   } catch (error) {
     console.error('Login error:', error)
     res.status(500).json({ message: 'Server error during login' })
-  }
-}
-
-// ── POST /api/auth/google ─────────────────────────────────────────────────────
-const googleAuth = async (req, res) => {
-  try {
-    const { idToken } = req.body
-    if (!idToken) return res.status(400).json({ message: 'Google token is required' })
-
-    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
-    if (!GOOGLE_CLIENT_ID) {
-      console.error('GOOGLE_CLIENT_ID environment variable is not set!')
-      return res.status(500).json({ message: 'Google Sign In is not configured. Please contact support.' })
-    }
-
-    // Verify token with Google
-    let payload
-    try {
-      const { OAuth2Client } = require('google-auth-library')
-      const client = new OAuth2Client(GOOGLE_CLIENT_ID)
-      const ticket = await client.verifyIdToken({
-        idToken,
-        audience: GOOGLE_CLIENT_ID,
-      })
-      payload = ticket.getPayload()
-    } catch (verifyErr) {
-      console.error('Google token verification failed:', verifyErr.message)
-      return res.status(401).json({ message: 'Invalid Google token — please try again' })
-    }
-
-    const { email, name, sub: googleId } = payload
-    if (!email) return res.status(400).json({ message: 'Could not get email from Google account' })
-
-    // Find or create user
-    let user      = await prisma.user.findUnique({ where: { email: email.toLowerCase() } })
-    let isNewUser = false
-
-    if (!user) {
-      isNewUser = true
-
-      // Build unique username from Google name
-      let baseUsername = (name || email.split('@')[0])
-        .replace(/[^a-zA-Z0-9_]/g, '')
-        .slice(0, 18) || 'Player'
-
-      let username = baseUsername
-      let suffix   = 1
-      while (await prisma.user.findUnique({ where: { username } })) {
-        username = `${baseUsername}${suffix++}`
-      }
-
-      user = await prisma.user.create({
-        data: {
-          username,
-          email:        email.toLowerCase(),
-          passwordHash: await bcrypt.hash(googleId, 12),
-          avatar:       username.slice(0, 2).toUpperCase(),
-          gollers:      0,
-          totalBought:  0,
-          totalSpent:   0,
-          coins:        100,
-          totalEarned:  100,
-        },
-      })
-
-      await prisma.coinTransaction.create({
-        data: {
-          userId: user.id,
-          type:   'EARN',
-          amount: 100,
-          label:  '🎉 Welcome bonus — 100 GHQ Coins (Google Sign In)',
-        },
-      })
-    }
-
-    if (!user.isActive) {
-      return res.status(401).json({ message: 'Account has been deactivated' })
-    }
-
-    const token = generateToken(user.id)
-    res.json({
-      message:   isNewUser ? `Welcome to GHQ, ${user.username}! 🎮 +100 GHQ Coins added.` : 'Welcome back!',
-      token,
-      user:      safeUser(user),
-      isNewUser,
-    })
-  } catch (error) {
-    console.error('Google auth error:', error)
-    res.status(500).json({ message: 'Server error during Google sign in' })
   }
 }
 
