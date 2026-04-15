@@ -46,15 +46,44 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ── Google Sign In ────────────────────────────────────────────────────────
+  // ── Google Sign In — Step 1 ───────────────────────────────────────────────
+  // Returns { success, needsUsername, googleToken, email } or logs in directly
   googleLogin: async (idToken) => {
     set({ isLoading: true, error: null })
     try {
       const data = await authAPI.googleAuth(idToken)
+
+      if (data.needsUsername) {
+        // New user — needs to pick a username before account is created
+        set({ isLoading: false })
+        return {
+          success:       false,
+          needsUsername: true,
+          googleToken:   data.googleToken,
+          email:         data.email,
+          picture:       data.picture,
+        }
+      }
+
+      // Existing user — logged in
       saveSession(data, set)
-      return { success: true, isNewUser: data.isNewUser, message: data.message }
+      return { success: true, isNewUser: false }
     } catch (err) {
       set({ error: err.message, isLoading: false })
+      return { success: false, message: err.message }
+    }
+  },
+
+  // ── Google Sign In — Step 2 ───────────────────────────────────────────────
+  // New user submits their chosen username → creates account → logs in
+  googleComplete: async (googleToken, username) => {
+    set({ isLoading: true, error: null })
+    try {
+      const data = await authAPI.googleComplete(googleToken, username)
+      saveSession(data, set)
+      return { success: true, isNewUser: true }
+    } catch (err) {
+      set({ isLoading: false })
       return { success: false, message: err.message }
     }
   },

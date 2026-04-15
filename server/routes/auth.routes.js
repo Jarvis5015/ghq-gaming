@@ -1,7 +1,7 @@
 // routes/auth.routes.js
 const express = require('express')
 const { body } = require('express-validator')
-const { register, login, googleAuth, getMe } = require('../controllers/auth.controller')
+const { register, login, googleAuth, googleComplete, checkUsername, getMe } = require('../controllers/auth.controller')
 const { protect } = require('../middleware/auth.middleware')
 const validate = require('../middleware/validate.middleware')
 
@@ -21,8 +21,14 @@ router.post('/login', [
   body('password').notEmpty().withMessage('Password is required'),
 ], validate, login)
 
-// POST /api/auth/google — Google Sign In
+// POST /api/auth/google — Step 1: verify Google token, return needsUsername if new user
 router.post('/google', googleAuth)
+
+// POST /api/auth/google/complete — Step 2: new user submits chosen username, creates account
+router.post('/google/complete', googleComplete)
+
+// POST /api/auth/check-username — live username availability check
+router.post('/check-username', checkUsername)
 
 // GET /api/auth/me (protected)
 router.get('/me', protect, getMe)
