@@ -1,0 +1,13 @@
+  useEffect(() => {
+    configAPI.getAdmin()
+      .then(res => {
+        // Filter out prizes + tournament categories
+        // Those are set per-tournament in Prize Tiers and Result Announcement
+        const filtered = (res.config || []).filter(
+          item => item.category !== 'prizes' && item.category !== 'tournament'
+        )
+        setConfig(filtered)
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false))
+  }, [])
