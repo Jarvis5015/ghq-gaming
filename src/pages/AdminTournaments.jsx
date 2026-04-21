@@ -9,22 +9,21 @@ const GAME_COLORS = {
   Fortnite: '#00bcd4', 'Clash Royale': '#7c3aed',
 }
 
-const toLocal  = (iso) => iso ? new Date(iso).toISOString().slice(0, 16) : ''
+const toLocal   = (iso) => iso ? new Date(iso).toISOString().slice(0, 16) : ''
 const fromLocal = (val) => val ? new Date(val).toISOString() : null
 
 // ── Prize Tier Builder ────────────────────────────────────────────────────────
 function PrizeTierBuilder({ tiers, onChange }) {
   const addTier    = () => onChange([...tiers, { placement: tiers.length + 1, gollars: 0, coins: 0 }])
   const removeTier = (i) => onChange(tiers.filter((_, idx) => idx !== i))
-  const updateTier = (i, field, val) => onChange(tiers.map((t, idx) => idx === i ? { ...t, [field]: Number(val) || 0 } : t))
+  const updateTier = (i, f, val) => onChange(tiers.map((t, idx) => idx === i ? { ...t, [f]: Number(val) || 0 } : t))
   const MEDALS = { 1: '🏆', 2: '🥈', 3: '🥉' }
-  const PLACE  = { 1: '1st Place', 2: '2nd Place', 3: '3rd Place', 4: '4th', 5: '5th' }
-
+  const PLACE  = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th' }
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
         <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase">PRIZE TIERS</label>
-        <button type="button" onClick={addTier} className="px-3 py-1 font-mono text-[9px] tracking-widest uppercase border border-[#00f5ff]/30 text-[#00f5ff] hover:bg-[#00f5ff]/10 transition-all">+ Add Tier</button>
+        <button type="button" onClick={addTier} className="px-3 py-1 font-mono text-[9px] tracking-widest uppercase border border-[#00f5ff]/30 text-[#00f5ff] hover:bg-[#00f5ff]/10">+ Add Tier</button>
       </div>
       {tiers.length === 0 ? (
         <div className="border border-dashed border-[#1a2545] p-4 text-center font-mono text-xs text-[#4a5568]">No prize tiers — winners get GHQ Coins only.</div>
@@ -39,25 +38,25 @@ function PrizeTierBuilder({ tiers, onChange }) {
           {tiers.map((tier, i) => (
             <div key={i} className="grid grid-cols-12 gap-3 px-4 py-2.5 border-b border-[#1a2545] last:border-0 items-center">
               <div className="col-span-3 flex items-center gap-2">
-                <span className="text-base">{MEDALS[tier.placement] || `#${tier.placement}`}</span>
+                <span>{MEDALS[tier.placement] || `#${tier.placement}`}</span>
                 <span className="font-display text-sm text-white">{PLACE[tier.placement] || `#${tier.placement}`}</span>
               </div>
               <div className="col-span-4">
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-sm text-[#f5a623]">🪙</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#f5a623]">🪙</span>
                   <input type="number" min="0" value={tier.gollars || ''} onChange={e => updateTier(i, 'gollars', e.target.value)} placeholder="0"
                     className="w-full pl-8 pr-3 py-2 bg-[#050810] border border-[#1a2545] text-[#f5a623] font-mono text-sm focus:outline-none focus:border-[#f5a623]/40" />
                 </div>
               </div>
               <div className="col-span-4">
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-sm text-[#ffd700]">⬡</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#ffd700]">⬡</span>
                   <input type="number" min="0" value={tier.coins || ''} onChange={e => updateTier(i, 'coins', e.target.value)} placeholder="0"
                     className="w-full pl-8 pr-3 py-2 bg-[#050810] border border-[#1a2545] text-[#ffd700] font-mono text-sm focus:outline-none focus:border-[#ffd700]/40" />
                 </div>
               </div>
               <div className="col-span-1 flex justify-end">
-                <button type="button" onClick={() => removeTier(i)} className="font-mono text-xs text-[#ff2d55]/50 hover:text-[#ff2d55] transition-colors">✕</button>
+                <button type="button" onClick={() => removeTier(i)} className="font-mono text-xs text-[#ff2d55]/50 hover:text-[#ff2d55]">✕</button>
               </div>
             </div>
           ))}
@@ -69,16 +68,14 @@ function PrizeTierBuilder({ tiers, onChange }) {
 
 // ── Set Room Credentials Form ─────────────────────────────────────────────────
 function SetRoomForm({ tournament, onSaved }) {
-  const [roomId,     setRoomId]     = useState(tournament?.roomId     || '')
-  const [roomPass,   setRoomPass]   = useState(tournament?.roomPassword || '')
-  const [saving,     setSaving]     = useState(false)
-  const [msg,        setMsg]        = useState('')
-  const [error,      setError]      = useState('')
-  const [showPass,   setShowPass]   = useState(false)
-  const [clearing,   setClearing]   = useState(false)
-
-  const hasRoom = tournament?.roomId && tournament?.roomPassword
-
+  const [roomId,   setRoomId]   = useState(tournament?.roomId       || '')
+  const [roomPass, setRoomPass] = useState(tournament?.roomPassword || '')
+  const [saving,   setSaving]   = useState(false)
+  const [clearing, setClearing] = useState(false)
+  const [msg,      setMsg]      = useState('')
+  const [error,    setError]    = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const hasRoom  = tournament?.roomId && tournament?.roomPassword
   const inputCls = "w-full px-3 py-2.5 bg-[#050810] border border-[#1a2545] text-[#e8eaf6] font-mono text-sm focus:outline-none focus:border-[#00ff88]/40 transition-colors"
 
   const handleSave = async (e) => {
@@ -87,133 +84,71 @@ function SetRoomForm({ tournament, onSaved }) {
     setSaving(true); setMsg(''); setError('')
     try {
       const res = await tournamentAPI.setRoom(tournament.id, { roomId: roomId.trim(), roomPassword: roomPass.trim() })
-      setMsg(res.message)
-      if (onSaved) onSaved()
-      setTimeout(() => setMsg(''), 5000)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSaving(false)
-    }
+      setMsg(res.message); if (onSaved) onSaved(); setTimeout(() => setMsg(''), 5000)
+    } catch (err) { setError(err.message) } finally { setSaving(false) }
   }
 
   const handleClear = async () => {
-    if (!window.confirm('Clear room credentials? Players will no longer see them.')) return
+    if (!window.confirm('Clear room credentials?')) return
     setClearing(true)
     try {
       await tournamentAPI.clearRoom(tournament.id)
-      setRoomId(''); setRoomPass('')
-      setMsg('Room credentials cleared')
-      if (onSaved) onSaved()
-      setTimeout(() => setMsg(''), 3000)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setClearing(false)
-    }
+      setRoomId(''); setRoomPass(''); setMsg('Room credentials cleared')
+      if (onSaved) onSaved(); setTimeout(() => setMsg(''), 3000)
+    } catch (err) { setError(err.message) } finally { setClearing(false) }
   }
 
   return (
-    <div className="border border-[#00ff88]/30 bg-[#0a0f1e] overflow-hidden mb-5"
+    <div className="border border-[#00ff88]/30 bg-[#0a0f1e] overflow-hidden mb-5 relative"
       style={{ clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%)' }}>
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#00ff88] to-transparent" />
-
-      {/* Header */}
       <div className="px-5 py-4 border-b border-[#00ff88]/20 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-xl">🎮</span>
           <div>
             <div className="font-display font-bold text-sm text-[#00ff88]">ROOM CREDENTIALS</div>
-            <div className="font-mono text-[10px] text-[#4a5568]">
-              Set before going LIVE — only registered players will see these
-            </div>
+            <div className="font-mono text-[10px] text-[#4a5568]">Set before LIVE — only registered players see these</div>
           </div>
         </div>
-        {hasRoom && (
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-[#00ff88]" />
-            <span className="font-mono text-[9px] text-[#00ff88]">ROOM SET</span>
-          </div>
-        )}
+        {hasRoom && <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-[#00ff88]" /><span className="font-mono text-[9px] text-[#00ff88]">SET</span></div>}
       </div>
-
       <div className="p-5">
-        {/* Current room display (if set) */}
         {hasRoom && (
           <div className="mb-4 p-4 border border-[#00ff88]/20 bg-[#00ff88]/5 grid grid-cols-2 gap-4">
-            <div>
-              <div className="font-mono text-[9px] text-[#4a5568] tracking-widest mb-1">CURRENT ROOM ID</div>
-              <div className="font-display font-bold text-xl text-white">{tournament.roomId}</div>
-            </div>
-            <div>
-              <div className="font-mono text-[9px] text-[#4a5568] tracking-widest mb-1">CURRENT PASSWORD</div>
-              <div className="font-display font-bold text-xl text-[#ffd700]">
-                {showPass ? tournament.roomPassword : '••••••••'}
-              </div>
-            </div>
+            <div><div className="font-mono text-[9px] text-[#4a5568] tracking-widest mb-1">ROOM ID</div><div className="font-display font-bold text-xl text-white">{tournament.roomId}</div></div>
+            <div><div className="font-mono text-[9px] text-[#4a5568] tracking-widest mb-1">PASSWORD</div><div className="font-display font-bold text-xl text-[#ffd700]">{showPass ? tournament.roomPassword : '••••••••'}</div></div>
           </div>
         )}
-
         <AnimatePresence>
           {msg   && <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="mb-3 p-3 border border-[#00ff88]/30 bg-[#00ff88]/10 font-mono text-xs text-[#00ff88]">{msg}</motion.div>}
           {error && <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="mb-3 p-3 border border-[#ff2d55]/30 bg-[#ff2d55]/10 font-mono text-xs text-[#ff2d55]">⚠ {error}</motion.div>}
         </AnimatePresence>
-
         <form onSubmit={handleSave} className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">
-                Room ID *
-              </label>
-              <input
-                type="text"
-                value={roomId}
-                onChange={e => setRoomId(e.target.value)}
-                placeholder="e.g. GHQ2026"
-                className={inputCls}
-              />
+              <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Room ID *</label>
+              <input type="text" value={roomId} onChange={e => setRoomId(e.target.value)} placeholder="e.g. GHQ2026" className={inputCls} />
             </div>
             <div>
-              <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">
-                Room Password *
-              </label>
+              <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Room Password *</label>
               <div className="relative">
-                <input
-                  type={showPass ? 'text' : 'password'}
-                  value={roomPass}
-                  onChange={e => setRoomPass(e.target.value)}
-                  placeholder="e.g. ghq@1234"
-                  className={inputCls + ' pr-16'}
-                />
-                <button type="button" onClick={() => setShowPass(p => !p)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[9px] text-[#4a5568] hover:text-white tracking-wider transition-colors">
-                  {showPass ? 'HIDE' : 'SHOW'}
-                </button>
+                <input type={showPass ? 'text' : 'password'} value={roomPass} onChange={e => setRoomPass(e.target.value)} placeholder="e.g. ghq@1234" className={inputCls + ' pr-16'} />
+                <button type="button" onClick={() => setShowPass(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[9px] text-[#4a5568] hover:text-white">{showPass ? 'HIDE' : 'SHOW'}</button>
               </div>
             </div>
           </div>
-
           <div className="flex gap-3">
-            <button type="submit" disabled={saving}
-              className="relative px-6 py-2.5 overflow-hidden group disabled:opacity-50"
-              style={{ clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)' }}>
-              <div className="absolute inset-0 bg-[#00ff88] group-hover:bg-[#00ff88]/85 transition-colors" />
-              <span className="relative font-display font-bold text-xs tracking-widest uppercase text-[#050810]">
-                {saving ? 'Saving...' : hasRoom ? '🔄 Update Room' : '🎮 Set Room Credentials'}
-              </span>
+            <button type="submit" disabled={saving} className="relative px-6 py-2.5 overflow-hidden group disabled:opacity-50" style={{ clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)' }}>
+              <div className="absolute inset-0 bg-[#00ff88] group-hover:bg-[#00ff88]/85" />
+              <span className="relative font-display font-bold text-xs tracking-widest uppercase text-[#050810]">{saving ? 'Saving...' : hasRoom ? '🔄 Update Room' : '🎮 Set Room Credentials'}</span>
             </button>
             {hasRoom && (
-              <button type="button" onClick={handleClear} disabled={clearing}
-                className="px-4 py-2.5 font-mono text-[10px] tracking-widest uppercase border border-[#ff2d55]/30 text-[#ff2d55]/70 hover:text-[#ff2d55] hover:border-[#ff2d55]/60 transition-all disabled:opacity-40">
-                {clearing ? 'Clearing...' : '✕ Clear Room'}
+              <button type="button" onClick={handleClear} disabled={clearing} className="px-4 py-2.5 font-mono text-[10px] tracking-widest uppercase border border-[#ff2d55]/30 text-[#ff2d55]/70 hover:text-[#ff2d55] disabled:opacity-40">
+                {clearing ? 'Clearing...' : '✕ Clear'}
               </button>
             )}
           </div>
-
-          <div className="font-mono text-[9px] text-[#4a5568] leading-relaxed">
-            💡 Room credentials are <strong className="text-white">only visible to registered players</strong> when the tournament is LIVE.
-            Non-registered players and visitors will never see them.
-          </div>
+          <div className="font-mono text-[9px] text-[#4a5568]">💡 Only visible to <strong className="text-white">registered players</strong> when LIVE.</div>
         </form>
       </div>
     </div>
@@ -224,10 +159,11 @@ function SetRoomForm({ tournament, onSaved }) {
 function CreateForm({ onCreated }) {
   const EMPTY = {
     name: '', game: '', platform: 'PC', type: 'TOURNAMENT', mode: 'FREE',
+    teamSize: 'Solo',
     entryFee: '', prizePool: '', maxPlayers: '64', coinReward: '100',
     description: '', rules: '',
     registrationStart: '', registrationEnd: '', startDate: '', startTime: '18:00', tournamentEnd: '',
-    prizeTiers: [],
+    prizeTiers:  [],
     adsRequired: 0,
   }
   const [form,    setForm]    = useState(EMPTY)
@@ -245,20 +181,24 @@ function CreateForm({ onCreated }) {
     try {
       const startDT = new Date(`${form.startDate}T${form.startTime || '18:00'}`)
       const res = await tournamentAPI.create({
-        name: form.name, game: form.game, platform: form.platform,
-        type: form.type, mode: form.mode,
-        entryFee:   Number(form.entryFee) || 0,
-        prizePool:  Number(form.prizePool) || 0,
-        coinReward: Number(form.coinReward) || 100,
-        maxPlayers: Number(form.maxPlayers) || 64,
+        name:        form.name,
+        game:        form.game,
+        platform:    form.platform,
+        type:        form.type,
+        mode:        form.mode,
+        teamSize:    form.teamSize,
+        entryFee:    Number(form.entryFee)   || 0,
+        prizePool:   Number(form.prizePool)  || 0,
+        coinReward:  Number(form.coinReward) || 100,
+        maxPlayers:  Number(form.maxPlayers) || 64,
         description: form.description,
-        rules: form.rules.split('\n').filter(Boolean),
-        startDate: startDT.toISOString(),
+        rules:       form.rules.split('\n').filter(Boolean),
+        startDate:         startDT.toISOString(),
         registrationStart: fromLocal(form.registrationStart),
         registrationEnd:   fromLocal(form.registrationEnd),
         tournamentEnd:     fromLocal(form.tournamentEnd),
-        prizeTiers:   form.prizeTiers,
-        adsRequired:  Number(form.adsRequired) || 0,
+        prizeTiers:  form.prizeTiers,
+        adsRequired: Number(form.adsRequired) || 0,
       })
       setMsg(`✓ "${res.tournament.name}" created!`)
       setForm(EMPTY)
@@ -279,7 +219,7 @@ function CreateForm({ onCreated }) {
       </AnimatePresence>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic */}
+        {/* Basic info */}
         <div className="grid md:grid-cols-2 gap-5">
           <div>
             <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Tournament Name *</label>
@@ -294,6 +234,7 @@ function CreateForm({ onCreated }) {
           </div>
         </div>
 
+        {/* Platform + Type */}
         <div className="grid md:grid-cols-2 gap-5">
           <div>
             <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Platform *</label>
@@ -319,18 +260,33 @@ function CreateForm({ onCreated }) {
           </div>
         </div>
 
-        <div>
-          <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Entry Mode *</label>
-          <div className="flex gap-2 max-w-sm">
-            {[['FREE', '🆓 Free'], ['PAID', '🪙 Paid']].map(([v, l]) => (
-              <button key={v} type="button" disabled={form.type === 'CHAMPIONS' && v === 'FREE'} onClick={() => set('mode', v)}
-                className={`flex-1 py-2.5 font-display text-xs tracking-wider uppercase border transition-all disabled:opacity-30 ${form.mode===v?(v==='PAID'?'border-[#f5a623] text-[#f5a623] bg-[#f5a623]/10':'border-[#00ff88] text-[#00ff88] bg-[#00ff88]/10'):'border-[#1a2545] text-[#4a5568] hover:text-white'}`}>
-                {l}
-              </button>
-            ))}
+        {/* Team Size + Entry Mode */}
+        <div className="grid md:grid-cols-2 gap-5">
+          <div>
+            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Team Size *</label>
+            <div className="flex gap-2">
+              {[['Solo','👤'],['Duo','👥'],['Squad','👥👥'],['Custom','⚙️']].map(([v, icon]) => (
+                <button key={v} type="button" onClick={() => set('teamSize', v)}
+                  className={`flex-1 py-2.5 font-display text-xs tracking-wider uppercase border transition-all ${form.teamSize===v?'border-[#00ff88] text-[#00ff88] bg-[#00ff88]/10':'border-[#1a2545] text-[#4a5568] hover:text-white'}`}>
+                  {icon} {v}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Entry Mode *</label>
+            <div className="flex gap-2">
+              {[['FREE', '🆓 Free'], ['PAID', '🪙 Paid']].map(([v, l]) => (
+                <button key={v} type="button" disabled={form.type === 'CHAMPIONS' && v === 'FREE'} onClick={() => set('mode', v)}
+                  className={`flex-1 py-2.5 font-display text-xs tracking-wider uppercase border transition-all disabled:opacity-30 ${form.mode===v?(v==='PAID'?'border-[#f5a623] text-[#f5a623] bg-[#f5a623]/10':'border-[#00ff88] text-[#00ff88] bg-[#00ff88]/10'):'border-[#1a2545] text-[#4a5568] hover:text-white'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
+        {/* Numbers row */}
         <div className="grid md:grid-cols-3 gap-5">
           {form.mode === 'PAID' && (
             <div>
@@ -381,6 +337,9 @@ function CreateForm({ onCreated }) {
               <input type="datetime-local" value={form.tournamentEnd} onChange={e => set('tournamentEnd', e.target.value)} className={inputCls} />
             </div>
           </div>
+          <div className="p-3 border border-[#00f5ff]/10 bg-[#00f5ff]/5 font-mono text-[10px] text-[#4a5568]">
+            🤖 <strong className="text-white">Auto-scheduler</strong> sets LIVE at start time, COMPLETED at end time.
+          </div>
         </div>
 
         {/* Ad Gate */}
@@ -392,8 +351,7 @@ function CreateForm({ onCreated }) {
               <div className="w-40">
                 <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Ads Required</label>
                 <input type="number" min="0" max="10" value={form.adsRequired}
-                  onChange={e => set('adsRequired', Math.max(0, Math.min(10, Number(e.target.value) || 0)))}
-                  className={inputCls} />
+                  onChange={e => set('adsRequired', Math.max(0, Math.min(10, Number(e.target.value) || 0)))} className={inputCls} />
               </div>
               <div className="flex gap-1.5 pb-0.5">
                 {[0, 1, 2, 3, 5].map(n => (
@@ -443,18 +401,11 @@ function ResultAnnouncer({ tournament, registrations, onDone }) {
   const [msg,        setMsg]        = useState('')
   const [error,      setError]      = useState('')
 
-  const getPrizeTier = (placement) => prizeTiers.find(t => t.placement === placement)
+  const getPrizeTier = (p) => prizeTiers.find(t => t.placement === p)
 
   const setPlacement = (userId, placement) => {
     const tier = getPrizeTier(placement)
-    setPlacements(prev => ({
-      ...prev,
-      [userId]: {
-        placement,
-        gollars: tier?.gollars ?? 0,
-        coins:   tier?.coins   ?? 0,
-      },
-    }))
+    setPlacements(prev => ({ ...prev, [userId]: { placement, gollars: tier?.gollars ?? 0, coins: tier?.coins ?? 0 } }))
   }
 
   const updateField = (userId, field, val) =>
@@ -474,19 +425,15 @@ function ResultAnnouncer({ tournament, registrations, onDone }) {
       await tournamentAPI.announceResults(tournament.id, { results })
       setMsg('✓ Results announced! Prizes credited to winners.')
       setTimeout(() => onDone && onDone(), 2000)
-    } catch (err) { setError(err.message) }
-    finally { setLoading(false) }
+    } catch (err) { setError(err.message) } finally { setLoading(false) }
   }
 
   const MEDALS = { 1: '🏆', 2: '🥈', 3: '🥉' }
 
   return (
     <div>
-      <h3 className="font-display font-bold text-xl text-white mb-1">
-        📢 ANNOUNCE RESULTS — <span className="text-[#ffd700]">{tournament?.name}</span>
-      </h3>
+      <h3 className="font-display font-bold text-xl text-white mb-1">📢 ANNOUNCE RESULTS — <span className="text-[#ffd700]">{tournament?.name}</span></h3>
       <p className="font-mono text-xs text-[#4a5568] mb-4">{registrations?.length || 0} registered players</p>
-
       {prizeTiers.length > 0 && (
         <div className="mb-5 p-4 border border-[#f5a623]/20 bg-[#f5a623]/5">
           <div className="font-mono text-[9px] text-[#f5a623] tracking-widest mb-2">PRIZE TIERS (auto-fill on rank assign)</div>
@@ -501,12 +448,10 @@ function ResultAnnouncer({ tournament, registrations, onDone }) {
           </div>
         </div>
       )}
-
       <AnimatePresence>
         {msg   && <motion.div initial={{opacity:0}} animate={{opacity:1}} className="mb-4 p-3 border border-[#00ff88]/30 bg-[#00ff88]/10 font-mono text-sm text-[#00ff88]">{msg}</motion.div>}
         {error && <motion.div initial={{opacity:0}} animate={{opacity:1}} className="mb-4 p-3 border border-[#ff2d55]/30 bg-[#ff2d55]/10 font-mono text-sm text-[#ff2d55]">⚠ {error}</motion.div>}
       </AnimatePresence>
-
       <div className="border border-[#1a2545] mb-6">
         <div className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-[#1a2545] bg-[#050810]">
           <span className="col-span-3 font-mono text-[9px] text-[#4a5568] tracking-widest">PLAYER</span>
@@ -527,49 +472,30 @@ function ResultAnnouncer({ tournament, registrations, onDone }) {
                 </div>
               </div>
               <div className="col-span-2 font-mono text-xs text-[#f5a623]">{reg.user.gameUserId || '—'}</div>
-
-              {/* Rank input — type any number */}
               <div className="col-span-3 flex items-center gap-2">
-                <input
-                  type="number" min="1"
-                  value={p?.placement || ''}
-                  onChange={e => {
-                    const rank = Number(e.target.value)
-                    if (!e.target.value) return clearPlacement(reg.user.id)
-                    if (rank > 0) setPlacement(reg.user.id, rank)
-                  }}
-                  placeholder="e.g. 1, 5, 12"
-                  className={`w-full px-2 py-1.5 bg-[#050810] border font-mono text-sm text-center focus:outline-none transition-colors ${
-                    p ? 'border-[#ffd700]/50 text-[#ffd700]' : 'border-[#1a2545] text-[#4a5568]'
-                  }`}
-                />
-                {p && (
-                  <button onClick={() => clearPlacement(reg.user.id)}
-                    className="font-mono text-[10px] text-[#ff2d55]/50 hover:text-[#ff2d55] transition-colors flex-shrink-0">✕</button>
-                )}
-              </div>
-
-              <div className="col-span-2">
-                <input type="number" min="0" value={p?.gollars ?? ''} onChange={e => updateField(reg.user.id, 'gollars', e.target.value)}
-                  disabled={!p} placeholder="0"
-                  className="w-full px-2 py-1.5 bg-[#050810] border border-[#1a2545] text-[#f5a623] font-mono text-xs focus:outline-none focus:border-[#f5a623]/40 disabled:opacity-30" />
+                <input type="number" min="1" value={p?.placement || ''}
+                  onChange={e => { const rank = Number(e.target.value); if (!e.target.value) return clearPlacement(reg.user.id); if (rank > 0) setPlacement(reg.user.id, rank) }}
+                  placeholder="e.g. 1"
+                  className={`w-full px-2 py-1.5 bg-[#050810] border font-mono text-sm text-center focus:outline-none transition-colors ${p ? 'border-[#ffd700]/50 text-[#ffd700]' : 'border-[#1a2545] text-[#4a5568]'}`} />
+                {p && <button onClick={() => clearPlacement(reg.user.id)} className="font-mono text-[10px] text-[#ff2d55]/50 hover:text-[#ff2d55] flex-shrink-0">✕</button>}
               </div>
               <div className="col-span-2">
-                <input type="number" min="0" value={p?.coins ?? ''} onChange={e => updateField(reg.user.id, 'coins', e.target.value)}
-                  disabled={!p} placeholder="0"
-                  className="w-full px-2 py-1.5 bg-[#050810] border border-[#1a2545] text-[#ffd700] font-mono text-xs focus:outline-none focus:border-[#ffd700]/40 disabled:opacity-30" />
+                <input type="number" min="0" value={p?.gollars ?? ''} onChange={e => updateField(reg.user.id, 'gollars', e.target.value)} disabled={!p} placeholder="0"
+                  className="w-full px-2 py-1.5 bg-[#050810] border border-[#1a2545] text-[#f5a623] font-mono text-xs focus:outline-none disabled:opacity-30" />
+              </div>
+              <div className="col-span-2">
+                <input type="number" min="0" value={p?.coins ?? ''} onChange={e => updateField(reg.user.id, 'coins', e.target.value)} disabled={!p} placeholder="0"
+                  className="w-full px-2 py-1.5 bg-[#050810] border border-[#1a2545] text-[#ffd700] font-mono text-xs focus:outline-none disabled:opacity-30" />
               </div>
             </div>
           )
         })}
       </div>
-
-      {/* Summary */}
       {Object.keys(placements).length > 0 && (
         <div className="border border-[#ffd700]/20 bg-[#ffd700]/5 p-4 mb-5">
-          <div className="font-mono text-[10px] text-[#ffd700] tracking-widest mb-2">RESULT SUMMARY</div>
+          <div className="font-mono text-[10px] text-[#ffd700] tracking-widest mb-2">SUMMARY</div>
           <div className="space-y-1">
-            {Object.entries(placements).sort(([, a], [, b]) => a.placement - b.placement).map(([userId, data]) => {
+            {Object.entries(placements).sort(([,a],[,b]) => a.placement - b.placement).map(([userId, data]) => {
               const reg = registrations?.find(r => r.user.id === Number(userId))
               return (
                 <div key={userId} className="flex items-center gap-3 font-mono text-xs">
@@ -584,19 +510,13 @@ function ResultAnnouncer({ tournament, registrations, onDone }) {
           </div>
         </div>
       )}
-
       <div className="flex gap-3">
-        <button onClick={() => onDone && onDone()}
-          className="px-6 py-3 border border-[#1a2545] font-display text-sm tracking-widest uppercase text-[#4a5568] hover:text-white transition-all">
-          Cancel
-        </button>
+        <button onClick={() => onDone && onDone()} className="px-6 py-3 border border-[#1a2545] font-display text-sm tracking-widest uppercase text-[#4a5568] hover:text-white transition-all">Cancel</button>
         <button onClick={handleAnnounce} disabled={loading || !Object.keys(placements).length}
           className="relative px-8 py-3 overflow-hidden group disabled:opacity-40"
           style={{ clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)' }}>
-          <div className="absolute inset-0 bg-[#ffd700] group-hover:bg-[#ffd700]/85 transition-colors" />
-          <span className="relative font-display font-bold text-sm tracking-widest uppercase text-[#050810]">
-            {loading ? 'Announcing...' : '📢 Announce & Pay Winners'}
-          </span>
+          <div className="absolute inset-0 bg-[#ffd700] group-hover:bg-[#ffd700]/85" />
+          <span className="relative font-display font-bold text-sm tracking-widest uppercase text-[#050810]">{loading ? 'Announcing...' : '📢 Announce & Pay Winners'}</span>
         </button>
       </div>
     </div>
@@ -618,7 +538,6 @@ function TournamentDetailView({ tournament, onBack, onRefresh }) {
       .catch(console.error)
       .finally(() => setLoading(false))
   }
-
   useEffect(() => { load() }, [tournament.id])
 
   const changeStatus = async (newStatus) => {
@@ -626,8 +545,7 @@ function TournamentDetailView({ tournament, onBack, onRefresh }) {
     try {
       await tournamentAPI.update(tournament.id, { status: newStatus })
       setFull(p => ({ ...p, status: newStatus }))
-      setMsg(`Status → ${newStatus}`)
-      setTimeout(() => setMsg(''), 3000)
+      setMsg(`Status → ${newStatus}`); setTimeout(() => setMsg(''), 3000)
       onRefresh && onRefresh()
     } catch (err) { setMsg(`Error: ${err.message}`) }
     finally { setStatusLoading(false) }
@@ -644,14 +562,15 @@ function TournamentDetailView({ tournament, onBack, onRefresh }) {
     <div>
       {/* Header */}
       <div className="flex items-start gap-4 mb-6">
-        <button onClick={onBack} className="font-mono text-xs text-[#4a5568] hover:text-white transition-colors mt-1">← Back</button>
+        <button onClick={onBack} className="font-mono text-xs text-[#4a5568] hover:text-white mt-1">← Back</button>
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-1 flex-wrap">
             <div className="font-mono text-xs font-bold" style={{ color }}>{t.game}</div>
             <div className={`px-2 py-0.5 font-mono text-[9px] tracking-widest border ${isLive?'border-[#00ff88]/40 text-[#00ff88] bg-[#00ff88]/10':isCompleted?'border-[#4a5568]/40 text-[#4a5568]':'border-[#00f5ff]/30 text-[#00f5ff]'}`}>{t.status}</div>
             {t.type === 'CHAMPIONS' && <div className="px-2 py-0.5 font-mono text-[9px] border border-[#ffd700]/30 text-[#ffd700]">👑 CHAMPIONS</div>}
+            {t.teamSize && <div className="px-2 py-0.5 font-mono text-[9px] border border-[#00f5ff]/20 text-[#00f5ff]/70">{t.teamSize === 'Solo' ? '👤' : t.teamSize === 'Duo' ? '👥' : t.teamSize === 'Squad' ? '👥👥' : '⚙️'} {t.teamSize}</div>}
             {t.adsRequired > 0 && <div className="px-2 py-0.5 font-mono text-[9px] border border-[#00f5ff]/30 text-[#00f5ff]">📺 {t.adsRequired} ads</div>}
-            {(t.roomId) && <div className="px-2 py-0.5 font-mono text-[9px] border border-[#00ff88]/30 text-[#00ff88] bg-[#00ff88]/5">🎮 Room Set</div>}
+            {t.roomId && <div className="px-2 py-0.5 font-mono text-[9px] border border-[#00ff88]/30 text-[#00ff88] bg-[#00ff88]/5">🎮 Room Set</div>}
           </div>
           <h3 className="font-display font-bold text-2xl text-white">{t.name}</h3>
         </div>
@@ -682,17 +601,14 @@ function TournamentDetailView({ tournament, onBack, onRefresh }) {
       )}
       {isCompleted && (
         <div className="flex gap-2 mb-5">
-          <button onClick={() => setView('results')}
-            className="px-4 py-2 font-display font-bold text-xs tracking-widest uppercase border border-[#ffd700]/40 text-[#ffd700] bg-[#ffd700]/10">
+          <button onClick={() => setView('results')} className="px-4 py-2 font-display font-bold text-xs tracking-widest uppercase border border-[#ffd700]/40 text-[#ffd700] bg-[#ffd700]/10">
             📢 Re-Announce / Edit Results
           </button>
         </div>
       )}
 
-      {/* ── Room Credentials Form ── */}
-      {!isCompleted && (
-        <SetRoomForm tournament={full || tournament} onSaved={load} />
-      )}
+      {/* Room Credentials Form */}
+      {!isCompleted && <SetRoomForm tournament={full || tournament} onSaved={load} />}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -729,11 +645,11 @@ function TournamentDetailView({ tournament, onBack, onRefresh }) {
         <div className="border border-[#f5a623]/20 bg-[#f5a623]/5 p-4 mb-5">
           <div className="font-mono text-[9px] text-[#f5a623] tracking-widest mb-3">🪙 PRIZE TIERS</div>
           <div className="flex flex-wrap gap-3">
-            {prizeTiers.map(t => (
-              <div key={t.placement} className="flex items-center gap-2 border border-[#1a2545] px-3 py-2">
-                <span>{{ 1: '🏆', 2: '🥈', 3: '🥉' }[t.placement] || `#${t.placement}`}</span>
-                {t.gollars > 0 && <span className="font-mono text-sm text-[#f5a623]">🪙 {t.gollars}</span>}
-                {t.coins > 0 && <span className="font-mono text-sm text-[#ffd700]">⬡ {t.coins}</span>}
+            {prizeTiers.map(pt => (
+              <div key={pt.placement} className="flex items-center gap-2 border border-[#1a2545] px-3 py-2">
+                <span>{{ 1: '🏆', 2: '🥈', 3: '🥉' }[pt.placement] || `#${pt.placement}`}</span>
+                {pt.gollars > 0 && <span className="font-mono text-sm text-[#f5a623]">🪙 {pt.gollars}</span>}
+                {pt.coins > 0 && <span className="font-mono text-sm text-[#ffd700]">⬡ {pt.coins}</span>}
               </div>
             ))}
           </div>
@@ -742,22 +658,14 @@ function TournamentDetailView({ tournament, onBack, onRefresh }) {
 
       {/* Players / Results */}
       {view === 'results' ? (
-        <ResultAnnouncer
-          tournament={full}
-          registrations={full?.registrations}
-          onDone={() => { setView('players'); onRefresh && onRefresh() }}
-        />
+        <ResultAnnouncer tournament={full} registrations={full?.registrations} onDone={() => { setView('players'); onRefresh && onRefresh() }} />
       ) : (
         <div>
-          <h4 className="font-display font-bold text-lg text-white mb-4">
-            REGISTERED PLAYERS ({full?.registrations?.length || 0})
-          </h4>
+          <h4 className="font-display font-bold text-lg text-white mb-4">REGISTERED PLAYERS ({full?.registrations?.length || 0})</h4>
           {loading ? (
             <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-14 border border-[#1a2545] animate-pulse bg-[#0a0f1e]/40" />)}</div>
           ) : !full?.registrations?.length ? (
-            <div className="text-center py-10 border border-[#1a2545]/40 border-dashed">
-              <div className="font-display text-[#4a5568]">No players registered yet</div>
-            </div>
+            <div className="text-center py-10 border border-[#1a2545]/40 border-dashed"><div className="font-display text-[#4a5568]">No players registered yet</div></div>
           ) : (
             <div className="border border-[#1a2545]">
               <div className="grid grid-cols-12 gap-3 px-5 py-3 border-b border-[#1a2545] bg-[#050810]">
@@ -808,8 +716,7 @@ export default function AdminTournaments() {
   const load = async () => {
     setLoading(true)
     try { const data = await tournamentAPI.getAll(); setTournaments(data.tournaments || []) }
-    catch (err) { console.error(err) }
-    finally { setLoading(false) }
+    catch (err) { console.error(err) } finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
 
@@ -821,7 +728,7 @@ export default function AdminTournaments() {
 
   if (view === 'create') return (
     <div>
-      <button onClick={() => setView('list')} className="font-mono text-xs text-[#4a5568] hover:text-white transition-colors mb-8 block">← Back</button>
+      <button onClick={() => setView('list')} className="font-mono text-xs text-[#4a5568] hover:text-white mb-8 block">← Back</button>
       <CreateForm onCreated={() => { load(); setTimeout(() => setView('list'), 1500) }} />
     </div>
   )
@@ -836,10 +743,8 @@ export default function AdminTournaments() {
           <div className="font-mono text-[10px] text-[#4a5568] tracking-widest mb-1">Admin</div>
           <h2 className="font-display font-bold text-3xl text-white">TOURNAMENT MANAGEMENT</h2>
         </div>
-        <button onClick={() => setView('create')}
-          className="relative px-6 py-3 overflow-hidden group"
-          style={{ clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)' }}>
-          <div className="absolute inset-0 bg-[#00f5ff] group-hover:bg-[#00f5ff]/85 transition-colors" />
+        <button onClick={() => setView('create')} className="relative px-6 py-3 overflow-hidden group" style={{ clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)' }}>
+          <div className="absolute inset-0 bg-[#00f5ff] group-hover:bg-[#00f5ff]/85" />
           <span className="relative font-display font-bold text-sm tracking-widest uppercase text-[#050810]">+ Create Tournament</span>
         </button>
       </div>
@@ -861,7 +766,7 @@ export default function AdminTournaments() {
             </button>
           ))}
         </div>
-        <button onClick={load} className="ml-auto px-3 py-1.5 font-mono text-[9px] tracking-widest uppercase border border-[#1a2545] text-[#4a5568] hover:text-white transition-all">↻ Refresh</button>
+        <button onClick={load} className="ml-auto px-3 py-1.5 font-mono text-[9px] uppercase border border-[#1a2545] text-[#4a5568] hover:text-white">↻</button>
       </div>
 
       {loading ? (
@@ -875,8 +780,8 @@ export default function AdminTournaments() {
       ) : (
         <div className="border border-[#1a2545]">
           <div className="grid grid-cols-12 gap-3 px-5 py-3 border-b border-[#1a2545] bg-[#050810]">
-            {['Tournament', 'Game', 'Status', 'Players', 'Entry', 'Ads', 'Date', ''].map(h => (
-              <span key={h} className={`font-mono text-[9px] text-[#4a5568] tracking-widest uppercase ${h==='Tournament'?'col-span-3':h==='Game'?'col-span-2':''}`}>{h}</span>
+            {['Tournament', 'Game', 'Format', 'Status', 'Players', 'Entry', 'Date', ''].map((h, i) => (
+              <span key={h+i} className={`font-mono text-[9px] text-[#4a5568] tracking-widest uppercase ${h==='Tournament'?'col-span-3':h==='Game'?'col-span-2':''}`}>{h}</span>
             ))}
           </div>
           {filtered.map((t, i) => {
@@ -893,11 +798,13 @@ export default function AdminTournaments() {
                   <div className="font-mono text-[9px] text-[#4a5568]">{t.platform}</div>
                 </div>
                 <div className="col-span-1">
+                  <div className="font-mono text-[9px] text-[#00f5ff]">{t.teamSize || 'Solo'}</div>
+                </div>
+                <div className="col-span-1">
                   <span className={`font-mono text-[9px] ${t.status==='LIVE'?'text-[#00ff88]':t.status==='COMPLETED'?'text-[#4a5568]':'text-[#00f5ff]'}`}>{t.status}</span>
                 </div>
                 <div className="col-span-1 font-mono text-xs text-white">{t.registeredPlayers}/{t.maxPlayers}</div>
                 <div className="col-span-1 font-mono text-xs" style={{ color: '#f5a623' }}>{t.entryFee > 0 ? `🪙${t.entryFee}` : 'FREE'}</div>
-                <div className="col-span-1 font-mono text-xs" style={{ color: t.adsRequired > 0 ? '#00f5ff' : '#1a2545' }}>{t.adsRequired > 0 ? `📺${t.adsRequired}` : '—'}</div>
                 <div className="col-span-1 font-mono text-[10px] text-[#4a5568]">{new Date(t.startDate).toLocaleDateString('en-IN')}</div>
                 <div className="col-span-1 flex justify-end">
                   <button onClick={() => { setSelected(t); setView('detail') }}

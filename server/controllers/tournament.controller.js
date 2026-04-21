@@ -22,10 +22,10 @@ const getTournaments = async (req, res) => {
     // Never expose room credentials in list view
     const formatted = tournaments.map(t => ({
       ...t,
-      roomId:       undefined,
-      roomPassword: undefined,
+      roomId:            undefined,
+      roomPassword:      undefined,
       registeredPlayers: t._count.registrations,
-      _count: undefined,
+      _count:            undefined,
     }))
 
     res.json({ tournaments: formatted })
@@ -36,9 +36,7 @@ const getTournaments = async (req, res) => {
 }
 
 // ── GET /api/tournaments/:id ──────────────────────────────────────────────────
-// Room credentials are only included if:
-//   - requesting user is ADMIN, OR
-//   - requesting user is registered for this tournament
+// Room credentials only shown to admin OR registered + LIVE player
 const getTournamentById = async (req, res) => {
   try {
     const tournament = await prisma.tournament.findUnique({
@@ -76,28 +74,21 @@ const getTournamentById = async (req, res) => {
       }
     })
 
-    // ── Room credential visibility logic ─────────────────────────────────────
-    // Admin always sees them
-    // Registered player sees them only when tournament is LIVE
-    // Everyone else gets null
     const requestingUserId = req.user?.id
     const isAdmin          = req.user?.role === 'ADMIN'
     const isRegistered     = tournament.registrations.some(r => r.user.id === requestingUserId)
     const isLive           = tournament.status === 'LIVE'
-
-    const showRoom = isAdmin || (isRegistered && isLive)
+    const showRoom         = isAdmin || (isRegistered && isLive)
 
     res.json({
       tournament: {
         ...tournament,
         registeredPlayers: tournament._count.registrations,
         registrations:     enrichedRegistrations,
-        // Only include room credentials if allowed
-        roomId:       showRoom ? tournament.roomId       : null,
-        roomPassword: showRoom ? tournament.roomPassword : null,
-        // Signal to frontend whether this player is registered
-        isRegistered: !!isRegistered,
-        _count: undefined,
+        roomId:            showRoom ? tournament.roomId       : null,
+        roomPassword:      showRoom ? tournament.roomPassword : null,
+        isRegistered:      !!isRegistered,
+        _count:            undefined,
       },
     })
   } catch (error) {
@@ -111,9 +102,16 @@ const createTournament = async (req, res) => {
   try {
     const {
       name, game, platform, type, mode,
-      entryFee = 0, prizePool = 0, coinReward = 100,
-      maxPlayers = 64, description = '', rules = [],
-      tags = [], organizer = 'GHQ Staff', region = 'India',
+      teamSize          = 'Solo',
+      entryFee          = 0,
+      prizePool         = 0,
+      coinReward        = 100,
+      maxPlayers        = 64,
+      description       = '',
+      rules             = [],
+      tags              = [],
+      organizer         = 'GHQ Staff',
+      region            = 'India',
       startDate,
       registrationStart = null,
       registrationEnd   = null,
@@ -134,6 +132,7 @@ const createTournament = async (req, res) => {
         name, game, platform,
         type:       type.toUpperCase(),
         mode:       mode.toUpperCase(),
+        teamSize:   teamSize || 'Solo',
         entryFee:   Number(entryFee),
         prizePool:  Number(prizePool),
         coinReward: Number(coinReward),
@@ -189,8 +188,6 @@ const updateTournament = async (req, res) => {
 }
 
 // ── PUT /api/tournaments/:id/room ─────────────────────────────────────────────
-// Admin sets the private room credentials just before starting the match
-// These are ONLY visible to registered players when tournament is LIVE
 const setRoomCredentials = async (req, res) => {
   try {
     const { id }                   = req.params
@@ -205,20 +202,13 @@ const setRoomCredentials = async (req, res) => {
 
     await prisma.tournament.update({
       where: { id: Number(id) },
-      data:  {
-        roomId:       roomId.trim(),
-        roomPassword: roomPassword.trim(),
-        // Also set to LIVE when room is set (optional — admin can set status separately)
-      },
+      data:  { roomId: roomId.trim(), roomPassword: roomPassword.trim() },
     })
 
-    // Count registered players to know who will see this
-    const registrationCount = await prisma.registration.count({
-      where: { tournamentId: Number(id) },
-    })
+    const registrationCount = await prisma.registration.count({ where: { tournamentId: Number(id) } })
 
     res.json({
-      message: `✓ Room credentials set! Visible to ${registrationCount} registered player${registrationCount !== 1 ? 's' : ''} once tournament goes LIVE.`,
+      message: `✓ Room credentials set! Visible to ${registrationCount} registered player${registrationCount !== 1 ? 's' : ''} once tournament is LIVE.`,
     })
   } catch (error) {
     console.error('SetRoomCredentials error:', error)
@@ -227,7 +217,6 @@ const setRoomCredentials = async (req, res) => {
 }
 
 // ── DELETE /api/tournaments/:id/room ─────────────────────────────────────────
-// Clear room credentials (after tournament ends)
 const clearRoomCredentials = async (req, res) => {
   try {
     await prisma.tournament.update({
@@ -258,55 +247,42 @@ const announceResults = async (req, res) => {
     for (const r of results) {
       const { userId, placement, coinsAwarded = 0, gollarsAwarded = 0 } = r
 
-      ops.push(
-        prisma.registration.updateMany({
-          where: { userId: Number(userId), tournamentId },
-          data:  { placement, coinsEarned: coinsAwarded, gollarsWon: gollarsAwarded, status: 'COMPLETED' },
-        })
-      )
+      ops.push(prisma.registration.updateMany({
+        where: { userId: Number(userId), tournamentId },
+        data:  { placement, coinsEarned: coinsAwarded, gollarsWon: gollarsAwarded, status: 'COMPLETED' },
+      }))
 
       if (coinsAwarded > 0) {
-        ops.push(
-          prisma.user.update({
-            where: { id: Number(userId) },
-            data:  {
-              coins:       { increment: coinsAwarded },
-              totalEarned: { increment: coinsAwarded },
-              ...(placement === 1 ? { wins: { increment: 1 } } : { losses: { increment: 1 } }),
-            },
-          })
-        )
-        ops.push(
-          prisma.coinTransaction.create({
-            data: {
-              userId: Number(userId), type: 'EARN', amount: coinsAwarded,
-              label: `${placement === 1 ? '🏆 Won' : placement === 2 ? '🥈 2nd' : placement === 3 ? '🥉 3rd' : `#${placement}`} — ${tournament.name}`,
-              game: tournament.game,
-            },
-          })
-        )
+        ops.push(prisma.user.update({
+          where: { id: Number(userId) },
+          data:  {
+            coins:       { increment: coinsAwarded },
+            totalEarned: { increment: coinsAwarded },
+            ...(placement === 1 ? { wins: { increment: 1 } } : { losses: { increment: 1 } }),
+          },
+        }))
+        ops.push(prisma.coinTransaction.create({
+          data: {
+            userId: Number(userId), type: 'EARN', amount: coinsAwarded,
+            label: `${placement === 1 ? '🏆 Won' : placement === 2 ? '🥈 2nd' : placement === 3 ? '🥉 3rd' : `#${placement}`} — ${tournament.name}`,
+            game: tournament.game,
+          },
+        }))
       }
 
       if (gollarsAwarded > 0) {
-        ops.push(
-          prisma.user.update({
-            where: { id: Number(userId) },
-            data:  {
-              gollers:     { increment: gollarsAwarded },
-              totalBought: { increment: gollarsAwarded },
-            },
-          })
-        )
+        ops.push(prisma.user.update({
+          where: { id: Number(userId) },
+          data:  { gollers: { increment: gollarsAwarded }, totalBought: { increment: gollarsAwarded } },
+        }))
       }
     }
 
     // Clear room credentials + mark completed
-    ops.push(
-      prisma.tournament.update({
-        where: { id: tournamentId },
-        data:  { status: 'COMPLETED', roomId: null, roomPassword: null },
-      })
-    )
+    ops.push(prisma.tournament.update({
+      where: { id: tournamentId },
+      data:  { status: 'COMPLETED', roomId: null, roomPassword: null },
+    }))
 
     await prisma.$transaction(ops)
 

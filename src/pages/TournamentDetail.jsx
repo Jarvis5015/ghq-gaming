@@ -309,7 +309,14 @@ export default function TournamentDetail() {
               <div className="grid lg:grid-cols-3 gap-10">
                 {/* Left: Info */}
                 <div className="lg:col-span-2">
-                  <div className="font-mono text-sm mb-2 font-bold" style={{ color: ac }}>{t.game} · {t.platform}</div>
+                  <div className="font-mono text-sm mb-2 font-bold flex items-center gap-3 flex-wrap" style={{ color: ac }}>
+                    <span>{t.game} · {t.platform}</span>
+                    {t.teamSize && (
+                      <span className="px-2 py-0.5 font-mono text-[10px] border border-[#00f5ff]/20 text-[#00f5ff]/80">
+                        {t.teamSize === 'Solo' ? '👤' : t.teamSize === 'Duo' ? '👥' : t.teamSize === 'Squad' ? '👥👥' : '⚙️'} {t.teamSize}
+                      </span>
+                    )}
+                  </div>
                   <h1 className="font-display font-bold text-5xl md:text-6xl text-white leading-tight mb-4">{t.name}</h1>
                   {t.description && (
                     <p className="font-body text-[#4a5568] text-base leading-relaxed max-w-xl mb-5">{t.description}</p>
@@ -381,6 +388,7 @@ export default function TournamentDetail() {
                     <div className="space-y-2 pt-1 border-t border-[#1a2545]">
                       {[
                         ['START', t.startDate ? new Date(t.startDate).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }) : '—'],
+                        ['FORMAT', t.teamSize || 'Solo'],
                         ['ORGANIZER', t.organizer || 'GHQ Staff'],
                         ['REGION', t.region || 'India'],
                         ['COIN REWARD', `+${(t.coinReward||0).toLocaleString()} ⬡`],

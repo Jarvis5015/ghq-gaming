@@ -1,0 +1,8 @@
+                  <div className="font-mono text-sm mb-2 font-bold" style={{ color: ac }}>
+                    {t.game} · {t.platform}
+                    {t.teamSize && (
+                      <span className="ml-3 px-2 py-0.5 font-mono text-[10px] border border-[#00f5ff]/20 text-[#00f5ff]/70" style={{ fontSize: '10px' }}>
+                        {t.teamSize === 'Solo' ? '👤' : t.teamSize === 'Duo' ? '👥' : t.teamSize === 'Squad' ? '👥👥' : '⚙️'} {t.teamSize}
+                      </span>
+                    )}
+                  </div>

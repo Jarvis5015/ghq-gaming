@@ -1,5 +1,6 @@
-// Prisma schema — GHQ Database v9
-// Added roomId + roomPassword to Tournament (only visible to registered players)
+// Prisma schema — GHQ Database v10
+// Added: roomId + roomPassword (private, registered players only)
+// Added: teamSize (Solo/Duo/Squad/Custom)
 
 generator client {
   provider = "prisma-client-js"
@@ -172,6 +173,10 @@ model Tournament {
   type        TournamentType
   mode        TournamentMode
   status      TournamentStatus @default(UPCOMING)
+
+  // Team format — Solo / Duo / Squad / Custom
+  teamSize    String           @default("Solo")
+
   entryFee    Int              @default(0)
   prizePool   Int              @default(0)
   coinReward  Int              @default(100)
@@ -190,7 +195,7 @@ model Tournament {
   prizeTiers  Json @default("[]")
   adsRequired Int  @default(0)
 
-  // ── Room credentials — only visible to registered players ──
+  // ── Room credentials ───────────────────────────────────────────────────────
   // Set by admin just before going LIVE
   // NEVER sent to players who are not registered
   roomId       String?
