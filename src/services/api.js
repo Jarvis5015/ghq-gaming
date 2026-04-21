@@ -48,8 +48,10 @@ export const tournamentAPI = {
   },
   getById:         (id)       => request(`/tournaments/${id}`),
   getBracket:      (id)       => request(`/tournaments/${id}/bracket`),
-  create:          (body)     => request('/tournaments', { method: 'POST', body: JSON.stringify(body) }),
-  update:          (id, body) => request(`/tournaments/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  create:          (body)     => request('/tournaments',            { method: 'POST',   body: JSON.stringify(body) }),
+  update:          (id, body) => request(`/tournaments/${id}`,      { method: 'PUT',    body: JSON.stringify(body) }),
+  setRoom:         (id, body) => request(`/tournaments/${id}/room`, { method: 'PUT',    body: JSON.stringify(body) }),
+  clearRoom:       (id)       => request(`/tournaments/${id}/room`, { method: 'DELETE' }),
   announceResults: (id, body) => request(`/tournaments/${id}/announce-results`, { method: 'POST', body: JSON.stringify(body) }),
 }
 
@@ -95,14 +97,14 @@ export const adAPI = {
   getActive:  (placement)    => request(`/ads${placement ? `?placement=${placement}` : ''}`),
   getGateAds: (tournamentId) => request(`/ads/gate/${tournamentId}`),
   getAll:     ()             => request('/ads/admin/all'),
-  create:     (body)         => request('/ads/admin',     { method: 'POST',   body: JSON.stringify(body) }),
-  update:     (id, body)     => request(`/ads/admin/${id}`, { method: 'PUT',  body: JSON.stringify(body) }),
+  create:     (body)         => request('/ads/admin',       { method: 'POST',   body: JSON.stringify(body) }),
+  update:     (id, body)     => request(`/ads/admin/${id}`, { method: 'PUT',    body: JSON.stringify(body) }),
   delete:     (id)           => request(`/ads/admin/${id}`, { method: 'DELETE' }),
 }
 
 export const configAPI = {
-  getPublic: () => request('/config/public'),
-  getAdmin:  () => request('/config/admin'),
+  getPublic: ()        => request('/config/public'),
+  getAdmin:  ()        => request('/config/admin'),
   save:      (updates) => request('/config/admin', { method: 'PUT', body: JSON.stringify({ updates }) }),
 }
 

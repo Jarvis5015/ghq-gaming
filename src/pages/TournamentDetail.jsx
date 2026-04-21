@@ -14,6 +14,175 @@ const GAME_COLORS = {
   Fortnite: '#00bcd4', 'Clash Royale': '#7c3aed',
 }
 
+// ── Room Credentials Box ──────────────────────────────────────────────────────
+// Shown ONLY to registered players when tournament is LIVE and room is set
+// Hidden from everyone else with a lock message
+function RoomCredentialsBox({ tournament, isRegistered, isLive }) {
+  const [showPassword, setShowPassword] = useState(false)
+  const [copiedId,     setCopiedId]     = useState(false)
+  const [copiedPass,   setCopiedPass]   = useState(false)
+
+  const hasRoom = tournament?.roomId && tournament?.roomPassword
+
+  const copy = (text, which) => {
+    navigator.clipboard.writeText(text).then(() => {
+      if (which === 'id') { setCopiedId(true); setTimeout(() => setCopiedId(false), 2000) }
+      else { setCopiedPass(true); setTimeout(() => setCopiedPass(false), 2000) }
+    })
+  }
+
+  // Not live yet — show "room will appear here" message
+  if (!isLive) {
+    return (
+      <div className="border border-[#1a2545] bg-[#0a0f1e] p-5 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#4a5568]/40 to-transparent" />
+        <div className="flex items-center gap-3 mb-3">
+          <span className="text-xl">🔒</span>
+          <div>
+            <div className="font-display font-bold text-sm text-white">ROOM CREDENTIALS</div>
+            <div className="font-mono text-[10px] text-[#4a5568]">Available when tournament goes LIVE</div>
+          </div>
+        </div>
+        <div className="p-3 border border-dashed border-[#1a2545] text-center">
+          <div className="font-mono text-[10px] text-[#4a5568]">
+            {isRegistered
+              ? '⏳ Room ID & Password will appear here once the admin starts the match'
+              : '🔐 Join this tournament to access room credentials'}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Live but no room set yet
+  if (isLive && !hasRoom) {
+    return (
+      <div className="border border-[#00ff88]/20 bg-[#00ff88]/5 p-5 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#00ff88]/40 to-transparent" />
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-2 h-2 rounded-full bg-[#00ff88] animate-ping" />
+          <div>
+            <div className="font-display font-bold text-sm text-[#00ff88]">TOURNAMENT IS LIVE</div>
+            <div className="font-mono text-[10px] text-[#4a5568]">
+              {isRegistered
+                ? 'Room credentials will appear here shortly — admin is setting up the room'
+                : 'Register to get room access'}
+            </div>
+          </div>
+        </div>
+        {isRegistered && (
+          <div className="flex items-center gap-2 p-3 border border-[#00ff88]/20">
+            <div className="w-4 h-4 border-2 border-[#00ff88]/30 border-t-[#00ff88] rounded-full animate-spin flex-shrink-0" />
+            <span className="font-mono text-[10px] text-[#00ff88]">Waiting for room setup… refresh in a moment</span>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Live + room set + NOT registered — show locked
+  if (isLive && hasRoom && !isRegistered) {
+    return (
+      <div className="border border-[#1a2545] bg-[#0a0f1e] p-5">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">🔐</span>
+          <div>
+            <div className="font-display font-bold text-sm text-white">ROOM CREDENTIALS LOCKED</div>
+            <div className="font-mono text-[10px] text-[#4a5568] mt-0.5">
+              Only registered players can see the Room ID and Password
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Live + room set + IS registered — show the credentials
+  if (isLive && hasRoom && isRegistered) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="border border-[#00ff88]/40 bg-[#0a0f1e] relative overflow-hidden"
+        style={{ clipPath: 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%)' }}
+      >
+        {/* Top glow line */}
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#00ff88] to-transparent" />
+
+        {/* Header */}
+        <div className="px-5 pt-5 pb-3 border-b border-[#00ff88]/20">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-[#00ff88] animate-ping" />
+            <span className="font-display font-bold text-sm text-[#00ff88] tracking-widest uppercase">
+              🎮 Room Credentials
+            </span>
+          </div>
+          <div className="font-mono text-[10px] text-[#4a5568] mt-1">
+            Only you and other registered players can see this
+          </div>
+        </div>
+
+        {/* Room ID */}
+        <div className="px-5 py-4 border-b border-[#1a2545]">
+          <div className="font-mono text-[9px] text-[#4a5568] tracking-widest uppercase mb-2">ROOM ID</div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="font-display font-bold text-2xl text-white tracking-widest">
+              {tournament.roomId}
+            </div>
+            <button
+              onClick={() => copy(tournament.roomId, 'id')}
+              className={`px-3 py-1.5 font-mono text-[9px] tracking-widest uppercase border transition-all flex-shrink-0 ${
+                copiedId
+                  ? 'border-[#00ff88]/50 text-[#00ff88] bg-[#00ff88]/10'
+                  : 'border-[#1a2545] text-[#4a5568] hover:border-[#00f5ff]/40 hover:text-[#00f5ff]'
+              }`}
+            >
+              {copiedId ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
+        </div>
+
+        {/* Room Password */}
+        <div className="px-5 py-4">
+          <div className="font-mono text-[9px] text-[#4a5568] tracking-widest uppercase mb-2">ROOM PASSWORD</div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="font-display font-bold text-2xl text-[#ffd700] tracking-widest">
+              {showPassword ? tournament.roomPassword : '••••••••'}
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={() => setShowPassword(p => !p)}
+                className="px-3 py-1.5 font-mono text-[9px] tracking-widest uppercase border border-[#1a2545] text-[#4a5568] hover:text-white transition-all"
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+              <button
+                onClick={() => copy(tournament.roomPassword, 'pass')}
+                className={`px-3 py-1.5 font-mono text-[9px] tracking-widest uppercase border transition-all ${
+                  copiedPass
+                    ? 'border-[#00ff88]/50 text-[#00ff88] bg-[#00ff88]/10'
+                    : 'border-[#1a2545] text-[#4a5568] hover:border-[#ffd700]/40 hover:text-[#ffd700]'
+                }`}
+              >
+                {copiedPass ? '✓ Copied' : 'Copy'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Warning */}
+        <div className="mx-5 mb-4 px-3 py-2 border border-[#ff2d55]/20 bg-[#ff2d55]/5">
+          <div className="font-mono text-[9px] text-[#ff2d55]/70">
+            ⚠ Do not share these credentials — they are private to registered players only
+          </div>
+        </div>
+      </motion.div>
+    )
+  }
+
+  return null
+}
+
 export default function TournamentDetail() {
   const { id }      = useParams()
   const navigate    = useNavigate()
@@ -27,7 +196,6 @@ export default function TournamentDetail() {
 
   useEffect(() => { fetchTournamentById(Number(id)) }, [id])
 
-  // When ad gate completes (phase=done), this fires automatically
   const executeJoin = async () => {
     setJoining(true); setJoinError('')
     try {
@@ -48,10 +216,8 @@ export default function TournamentDetail() {
     if (!isLoggedIn) { navigate('/login'); return }
     const isFreeWithAds = !isPaid && (t.adsRequired > 0)
     if (isFreeWithAds) {
-      // Open ad gate — join fires after all ads are watched
       setShowAdGate(true)
     } else {
-      // Paid or free-with-no-ads — join directly
       executeJoin()
     }
   }
@@ -88,6 +254,9 @@ export default function TournamentDetail() {
   const isCancelled = statusLower === 'cancelled'
   const hasAdGate   = !isPaid && (t.adsRequired > 0)
 
+  // isRegistered comes from the backend — set if current user is registered
+  const isRegistered = t.isRegistered || false
+
   const ac               = GAME_COLORS[t.game] || '#00f5ff'
   const registered       = t.registeredPlayers ?? 0
   const fillPct          = Math.min(100, Math.round((registered / t.maxPlayers) * 100))
@@ -96,7 +265,6 @@ export default function TournamentDetail() {
 
   return (
     <>
-      {/* Ad Gate Modal */}
       {showAdGate && (
         <AdGateModal
           tournament={t}
@@ -130,6 +298,11 @@ export default function TournamentDetail() {
                 )}
                 {isCompleted && (
                   <span className="px-2 py-0.5 border border-[#4a5568]/40 font-mono text-[9px] text-[#4a5568] tracking-widest uppercase">Ended</span>
+                )}
+                {isRegistered && isLive && (
+                  <span className="px-2 py-0.5 bg-[#00ff88]/10 border border-[#00ff88]/30 font-mono text-[9px] text-[#00ff88] tracking-widest uppercase">
+                    ✓ You're Registered
+                  </span>
                 )}
               </div>
 
@@ -165,7 +338,6 @@ export default function TournamentDetail() {
                   <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: `linear-gradient(90deg, ${ac}, transparent)` }} />
                   <div className="p-6 space-y-4">
 
-                    {/* Entry fee */}
                     <div>
                       <div className="font-mono text-[9px] text-[#4a5568] tracking-widest mb-1">{isPaid ? 'ENTRY FEE' : 'ENTRY'}</div>
                       {isPaid ? (
@@ -176,9 +348,7 @@ export default function TournamentDetail() {
                       ) : hasAdGate ? (
                         <div>
                           <div className="font-display font-bold text-3xl text-[#00ff88]">FREE</div>
-                          <div className="font-mono text-[10px] text-[#00f5ff] mt-1">
-                            📺 Watch {t.adsRequired} ad{t.adsRequired !== 1 ? 's' : ''} to unlock
-                          </div>
+                          <div className="font-mono text-[10px] text-[#00f5ff] mt-1">📺 Watch {t.adsRequired} ad{t.adsRequired !== 1 ? 's' : ''} to unlock</div>
                         </div>
                       ) : (
                         <div className="font-display font-bold text-3xl text-[#00ff88]">FREE</div>
@@ -244,7 +414,7 @@ export default function TournamentDetail() {
                     {/* Join Button */}
                     {isCompleted || isCancelled ? (
                       <div className="w-full py-3 border border-[#1a2545] text-center font-mono text-xs text-[#4a5568]">Tournament Ended</div>
-                    ) : joinMsg ? (
+                    ) : joinMsg || isRegistered ? (
                       <div className="w-full py-3 border border-[#00ff88]/30 bg-[#00ff88]/10 text-center font-display font-bold text-sm text-[#00ff88] tracking-wider">
                         ✓ You're Registered!
                       </div>
@@ -267,13 +437,10 @@ export default function TournamentDetail() {
                         <div className="absolute inset-0 transition-all group-hover:opacity-80"
                           style={{ background: isLive ? '#00ff88' : isPaid ? '#f5a623' : '#00f5ff' }} />
                         <span className="relative text-[#050810] font-bold">
-                          {joining
-                            ? 'Joining...'
-                            : hasAdGate
-                              ? `📺 Watch ${t.adsRequired} Ad${t.adsRequired !== 1 ? 's' : ''} & Join Free`
-                              : isPaid
-                                ? `🪙 Join for ${t.entryFee} Gollars`
-                                : '🎮 Join Free'}
+                          {joining ? 'Joining...'
+                            : hasAdGate ? `📺 Watch ${t.adsRequired} Ad${t.adsRequired !== 1 ? 's' : ''} & Join Free`
+                            : isPaid ? `🪙 Join for ${t.entryFee} Gollars`
+                            : '🎮 Join Free'}
                         </span>
                       </button>
                     )}
@@ -289,7 +456,18 @@ export default function TournamentDetail() {
           <div className="grid lg:grid-cols-3 gap-10">
             <div className="lg:col-span-2 space-y-10">
 
-              {/* In-article ad below hero */}
+              {/* ── ROOM CREDENTIALS — prominent banner for registered players ── */}
+              {isLoggedIn && (isRegistered || isLive) && (
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+                  <RoomCredentialsBox
+                    tournament={t}
+                    isRegistered={isRegistered}
+                    isLive={isLive}
+                  />
+                </motion.div>
+              )}
+
+              {/* In-article ad */}
               <AdSense slotId={AD_SLOTS.inArticle} format="auto" fullWidth={true} />
 
               {(t.rules || []).length > 0 && (
@@ -354,6 +532,13 @@ export default function TournamentDetail() {
               {/* Sidebar ad */}
               <AdSense slotId={AD_SLOTS.rectangle} format="rectangle" fullWidth={true} />
 
+              {/* Room Credentials — sidebar version (always shown in sidebar) */}
+              <RoomCredentialsBox
+                tournament={t}
+                isRegistered={isRegistered}
+                isLive={isLive}
+              />
+
               <motion.div initial={{ opacity:0, x:20 }} whileInView={{ opacity:1, x:0 }} viewport={{ once: true }}
                 className="border border-[#1a2545] bg-[#0a0f1e] p-5">
                 <h3 className="font-display font-bold text-lg text-white mb-4">COIN <span className="text-[#ffd700]">REWARDS</span></h3>
@@ -376,7 +561,6 @@ export default function TournamentDetail() {
                 </div>
               </motion.div>
 
-              {/* Second sidebar ad */}
               <AdSense slotId={AD_SLOTS.rectangle} format="rectangle" fullWidth={true} />
             </div>
           </div>

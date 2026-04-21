@@ -1,0 +1,5 @@
+  // ── Room credentials — only visible to registered players ──────────────────
+  // Set by admin just before/after going LIVE
+  // NEVER sent to players who are not registered
+  roomId       String?
+  roomPassword String?

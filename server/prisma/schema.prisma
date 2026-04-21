@@ -1,5 +1,5 @@
-// Prisma schema — GHQ Database v8
-// Google OAuth works via email matching — no googleId column needed
+// Prisma schema — GHQ Database v9
+// Added roomId + roomPassword to Tournament (only visible to registered players)
 
 generator client {
   provider = "prisma-client-js"
@@ -15,7 +15,7 @@ model User {
   id           Int      @id @default(autoincrement())
   username     String   @unique
   email        String   @unique
-  passwordHash String   @default("")   // empty string for Google-only accounts
+  passwordHash String   @default("")
   avatar       String   @default("")
   role         Role     @default(PLAYER)
 
@@ -189,6 +189,12 @@ model Tournament {
 
   prizeTiers  Json @default("[]")
   adsRequired Int  @default(0)
+
+  // ── Room credentials — only visible to registered players ──
+  // Set by admin just before going LIVE
+  // NEVER sent to players who are not registered
+  roomId       String?
+  roomPassword String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

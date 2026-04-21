@@ -1,7 +1,8 @@
 // middleware/auth.middleware.js
-const jwt   = require('jsonwebtoken')
+const jwt    = require('jsonwebtoken')
 const prisma = require('../config/db')
 
+// ── protect — requires valid token ───────────────────────────────────────────
 const protect = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization
@@ -10,7 +11,6 @@ const protect = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1]
-
     let decoded
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET)
@@ -21,23 +21,13 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ message: 'Invalid token' })
     }
 
-    // ✅ FIXED: removed 'platform' — it no longer exists on User model
     const user = await prisma.user.findUnique({
       where:  { id: decoded.userId },
-      select: {
-        id:       true,
-        username: true,
-        email:    true,
-        avatar:   true,
-        role:     true,
-        coins:    true,
-        gollers:  true,
-        isActive: true,
-      },
+      select: { id: true, username: true, email: true, avatar: true, role: true, coins: true, gollers: true, isActive: true },
     })
 
-    if (!user)           return res.status(401).json({ message: 'User no longer exists' })
-    if (!user.isActive)  return res.status(401).json({ message: 'Account has been deactivated' })
+    if (!user)          return res.status(401).json({ message: 'User no longer exists' })
+    if (!user.isActive) return res.status(401).json({ message: 'Account has been deactivated' })
 
     req.user = user
     next()
@@ -47,6 +37,41 @@ const protect = async (req, res, next) => {
   }
 }
 
+// ── optionalAuth — reads token if present, continues if not ──────────────────
+// Used on public routes that need to know WHO is asking (e.g. to show room details)
+const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      // No token — just continue without user
+      req.user = null
+      return next()
+    }
+
+    const token = authHeader.split(' ')[1]
+    let decoded
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET)
+    } catch {
+      // Invalid/expired token — continue without user, don't error
+      req.user = null
+      return next()
+    }
+
+    const user = await prisma.user.findUnique({
+      where:  { id: decoded.userId },
+      select: { id: true, username: true, email: true, avatar: true, role: true, coins: true, gollers: true, isActive: true },
+    })
+
+    req.user = (user && user.isActive) ? user : null
+    next()
+  } catch (error) {
+    req.user = null
+    next()
+  }
+}
+
+// ── adminOnly — requires ADMIN role ──────────────────────────────────────────
 const adminOnly = (req, res, next) => {
   if (req.user?.role !== 'ADMIN') {
     return res.status(403).json({ message: 'Access denied — admin only' })
@@ -54,4 +79,4 @@ const adminOnly = (req, res, next) => {
   next()
 }
 
-module.exports = { protect, adminOnly }
+module.exports = { protect, optionalAuth, adminOnly }
