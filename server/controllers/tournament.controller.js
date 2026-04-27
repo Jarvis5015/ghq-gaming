@@ -16,6 +16,7 @@ const getTournaments = async (req, res) => {
         ...(game     ? { game:     { contains: game,     mode: 'insensitive' } } : {}),
       },
       include: { _count: { select: { registrations: true } } },
+      // No DB-level sort by status — we sort in JS for priority order
       orderBy: [{ startDate: 'asc' }],
     })
 
@@ -27,6 +28,15 @@ const getTournaments = async (req, res) => {
       registeredPlayers: t._count.registrations,
       _count:            undefined,
     }))
+
+    // Sort: LIVE first → UPCOMING → COMPLETED → CANCELLED
+    // Within each group, sort by startDate ascending
+    const STATUS_ORDER = { LIVE: 0, UPCOMING: 1, DRAFT: 2, COMPLETED: 3, CANCELLED: 4 }
+    formatted.sort((a, b) => {
+      const statusDiff = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9)
+      if (statusDiff !== 0) return statusDiff
+      return new Date(a.startDate) - new Date(b.startDate)
+    })
 
     res.json({ tournaments: formatted })
   } catch (error) {
