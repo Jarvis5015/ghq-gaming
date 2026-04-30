@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import ParticleField from './components/ui/ParticleField'
 import LiveTicker from './components/ui/LiveTicker'
+import GameSelectionModal from './components/ui/GameSelectionModal'
 import useAuthStore from './store/useAuthStore'
 
 import Home             from './pages/Home'
@@ -21,12 +22,40 @@ import About            from './pages/About'
 import PrivacyPolicy    from './pages/PrivacyPolicy'
 import NotFound         from './pages/NotFound'
 
+// Key stored in localStorage to track if player has selected their games
+const GAMES_SELECTED_KEY = 'ghq_games_selected'
+
 export default function App() {
-  const { refreshUser, isLoggedIn } = useAuthStore()
+  const { refreshUser, isLoggedIn, user } = useAuthStore()
+  const [showGameModal, setShowGameModal] = useState(false)
 
   useEffect(() => {
     if (isLoggedIn) refreshUser()
   }, [])
+
+  // Show game selection modal after login if:
+  // 1. User is logged in
+  // 2. Not an admin
+  // 3. They haven't selected games yet (flag not in localStorage)
+  useEffect(() => {
+    if (!isLoggedIn || !user) return
+    if (user.role === 'ADMIN') return
+
+    const alreadySelected = localStorage.getItem(`${GAMES_SELECTED_KEY}_${user.id}`)
+    if (!alreadySelected) {
+      // Small delay so the page loads first before the modal pops up
+      const timer = setTimeout(() => setShowGameModal(true), 800)
+      return () => clearTimeout(timer)
+    }
+  }, [isLoggedIn, user?.id])
+
+  const handleGameModalComplete = () => {
+    // Mark as done for this user so it never shows again
+    if (user?.id) {
+      localStorage.setItem(`${GAMES_SELECTED_KEY}_${user.id}`, 'true')
+    }
+    setShowGameModal(false)
+  }
 
   return (
     <div className="relative bg-[#050810] min-h-screen">
@@ -52,6 +81,11 @@ export default function App() {
         </Routes>
       </main>
       <Footer />
+
+      {/* Game Selection Modal — shown once after first login */}
+      {showGameModal && (
+        <GameSelectionModal onComplete={handleGameModalComplete} />
+      )}
     </div>
   )
 }

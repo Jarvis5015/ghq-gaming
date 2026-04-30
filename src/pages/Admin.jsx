@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import useStore from '../store/useStore'
+import { gameAPI } from '../services/api'
 import AdminWallet from './AdminWallet'
 import AdminTournaments from './AdminTournaments'
 import AdminWithdraw from './AdminWithdraw'
@@ -61,26 +62,171 @@ function DashboardPanel({ setActive }) {
   const upcoming   = tournaments.filter(t => t.status === 'UPCOMING')
   const totalPrize = tournaments.reduce((s, t) => s + (t.prizePool || 0), 0)
 
+  const [gameStats,    setGameStats]    = useState([])
+  const [statsLoading, setStatsLoading] = useState(true)
+  const [totalPlayers, setTotalPlayers] = useState(0)
+
+  useEffect(() => {
+    gameAPI.getGameStats()
+      .then(res => {
+        setGameStats(res.stats || [])
+        setTotalPlayers(res.totalPlayers || 0)
+      })
+      .catch(console.error)
+      .finally(() => setStatsLoading(false))
+  }, [])
+
+  const maxPlayers = Math.max(...gameStats.map(g => g.players), 1)
+
+  const GAME_COLORS = {
+    'BGMI':         '#f5a623',
+    'Free Fire':    '#ff6b35',
+    'COD Mobile':   '#00c853',
+    'Clash Royale': '#7c3aed',
+    'Valorant':     '#ff4655',
+    'CS2':          '#de9b35',
+    'PUBG':         '#f0c040',
+    'Fortnite':     '#00bcd4',
+  }
+
   return (
     <div className="space-y-8">
       <div>
         <div className="font-mono text-[10px] text-[#4a5568] tracking-widest mb-1">Overview</div>
         <h2 className="font-display font-bold text-3xl text-white">DASHBOARD</h2>
       </div>
+
+      {/* Top stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatBox icon="🔴" label="Live Now"   value={live.length}        color="#ff2d55" />
-        <StatBox icon="📅" label="Upcoming"   value={upcoming.length}    color="#00f5ff" />
-        <StatBox icon="🏆" label="Total"      value={tournaments.length} color="#7c3aed" />
-        <StatBox icon="💰" label="Prize Pool" value={`₹${(totalPrize/1000).toFixed(0)}K`} color="#ffd700" />
+        <StatBox icon="🔴" label="Live Now"     value={live.length}                      color="#ff2d55" />
+        <StatBox icon="📅" label="Upcoming"     value={upcoming.length}                  color="#00f5ff" />
+        <StatBox icon="🏆" label="Tournaments"  value={tournaments.length}               color="#7c3aed" />
+        <StatBox icon="👥" label="Total Players" value={statsLoading ? '...' : totalPlayers} color="#00ff88" />
       </div>
+
+      {/* Per-game player counts */}
+      <div className="border border-[#1a2545] bg-[#0a0f1e] overflow-hidden"
+        style={{ clipPath: 'polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%)' }}>
+        <div className="px-6 py-4 border-b border-[#1a2545] flex items-center justify-between">
+          <div>
+            <div className="font-display font-bold text-lg text-white">PLAYERS PER GAME</div>
+            <div className="font-mono text-[10px] text-[#4a5568] mt-0.5">Real data from player game selections</div>
+          </div>
+          <div className="font-mono text-xs text-[#4a5568]">
+            {totalPlayers} total game profile{totalPlayers !== 1 ? 's' : ''}
+          </div>
+        </div>
+
+        <div className="p-6 space-y-3">
+          {statsLoading ? (
+            [...Array(6)].map((_, i) => (
+              <div key={i} className="h-12 border border-[#1a2545] animate-pulse bg-[#050810] rounded" />
+            ))
+          ) : gameStats.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-3xl mb-2">🎮</div>
+              <div className="font-display text-[#4a5568]">No game data yet</div>
+              <div className="font-mono text-[10px] text-[#4a5568] mt-1">Players will appear here after they log in and select their games</div>
+            </div>
+          ) : (
+            gameStats.map((g, i) => {
+              const color   = GAME_COLORS[g.game] || '#00f5ff'
+              const pct     = maxPlayers > 0 ? (g.players / maxPlayers) * 100 : 0
+              const isTop   = i === 0 && g.players > 0
+              return (
+                <motion.div key={g.game}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                  className="flex items-center gap-4 group">
+
+                  {/* Rank */}
+                  <div className="w-6 flex-shrink-0 font-mono text-xs text-[#4a5568] text-right">
+                    {isTop ? '👑' : `#${i+1}`}
+                  </div>
+
+                  {/* Game icon + name */}
+                  <div className="w-36 flex-shrink-0 flex items-center gap-2">
+                    <span className="text-lg">{g.icon}</span>
+                    <div>
+                      <div className="font-display text-sm text-white">{g.game}</div>
+                      <div className="font-mono text-[9px] text-[#4a5568]">{g.platform}</div>
+                    </div>
+                  </div>
+
+                  {/* Bar */}
+                  <div className="flex-1 relative h-8 bg-[#050810] border border-[#1a2545] overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ delay: i * 0.06 + 0.2, duration: 0.7, ease: 'easeOut' }}
+                      className="absolute inset-y-0 left-0 flex items-center"
+                      style={{ background: `${color}22`, borderRight: `2px solid ${color}` }}
+                    />
+                    <div className="absolute inset-0 flex items-center px-3">
+                      <span className="font-mono text-xs" style={{ color: g.players > 0 ? color : '#4a5568' }}>
+                        {g.players > 0 ? `${g.players} player${g.players !== 1 ? 's' : ''}` : 'No players yet'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Tournament count */}
+                  <div className="w-24 flex-shrink-0 text-right">
+                    <div className="font-mono text-xs text-white">{g.players}</div>
+                    <div className="font-mono text-[9px] text-[#4a5568]">{g.tournaments} tournaments</div>
+                  </div>
+                </motion.div>
+              )
+            })
+          )}
+        </div>
+
+        {/* Platform split */}
+        {!statsLoading && gameStats.length > 0 && (() => {
+          const mobile = gameStats.filter(g => g.platform === 'Mobile').reduce((s,g) => s + g.players, 0)
+          const pc     = gameStats.filter(g => g.platform === 'PC').reduce((s,g) => s + g.players, 0)
+          const total  = mobile + pc || 1
+          return (
+            <div className="px-6 pb-6">
+              <div className="border-t border-[#1a2545] pt-4">
+                <div className="font-mono text-[9px] text-[#4a5568] tracking-widest uppercase mb-3">Platform Split</div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <div className="flex justify-between mb-1.5">
+                      <span className="font-mono text-[10px] text-[#f5a623]">📱 Mobile</span>
+                      <span className="font-mono text-[10px] text-white">{mobile} ({Math.round(mobile/total*100)}%)</span>
+                    </div>
+                    <div className="h-2 bg-[#1a2545] rounded-full overflow-hidden">
+                      <motion.div initial={{width:0}} animate={{width:`${(mobile/total)*100}%`}} transition={{delay:0.5,duration:0.6}}
+                        className="h-full rounded-full bg-[#f5a623]" />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between mb-1.5">
+                      <span className="font-mono text-[10px] text-[#00f5ff]">🖥️ PC</span>
+                      <span className="font-mono text-[10px] text-white">{pc} ({Math.round(pc/total*100)}%)</span>
+                    </div>
+                    <div className="h-2 bg-[#1a2545] rounded-full overflow-hidden">
+                      <motion.div initial={{width:0}} animate={{width:`${(pc/total)*100}%`}} transition={{delay:0.6,duration:0.6}}
+                        className="h-full rounded-full bg-[#00f5ff]" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+      </div>
+
+      {/* Quick links */}
       <div className="p-6 border border-[#1a2545] bg-[#0a0f1e]/40">
         <div className="font-display font-bold text-lg text-white mb-4">QUICK LINKS</div>
         <div className="grid grid-cols-2 gap-3">
           {[
-            ['🏆 Manage Tournaments',  'tournaments'   ],
-            ['💸 Withdrawal Requests', 'withdraw'      ],
-            ['🪙 Verify Gollar Top-Ups','wallet'       ],
-            ['⬡ Coin Settings',        'coin-settings' ],
+            ['🏆 Manage Tournaments',   'tournaments'   ],
+            ['💸 Withdrawal Requests',  'withdraw'      ],
+            ['🪙 Verify Gollar Top-Ups', 'wallet'       ],
+            ['⬡ Coin Settings',         'coin-settings' ],
           ].map(([l, target]) => (
             <button key={l} onClick={() => setActive(target)}
               className="border border-[#1a2545] p-4 font-display text-sm text-[#4a5568] hover:text-white hover:border-[#00f5ff]/30 transition-all text-left">

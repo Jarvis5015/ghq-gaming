@@ -2,6 +2,7 @@
 const express = require('express')
 const {
   getSupportedGames,
+  getGameStats,
   getMyGameProfiles,
   getUserGameProfiles,
   addGameProfile,
@@ -19,6 +20,10 @@ const router = express.Router()
 // GET /api/games/supported
 // Returns the full list of games GHQ supports
 router.get('/supported', getSupportedGames)
+
+// GET /api/games/platform-stats
+// Admin dashboard — real player count per game
+router.get('/platform-stats', getGameStats)
 
 // GET /api/games/leaderboard/:game
 // Per-game leaderboard e.g. /api/games/leaderboard/BGMI

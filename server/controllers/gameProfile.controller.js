@@ -17,9 +17,41 @@ const SUPPORTED_GAMES = [
 ]
 
 // ── GET /api/games/supported ──────────────────────────────────────────────────
-// Returns list of all games GHQ supports
 const getSupportedGames = (req, res) => {
   res.json({ games: SUPPORTED_GAMES })
+}
+
+// ── GET /api/games/platform-stats ─────────────────────────────────────────────
+// Returns real player count per game — used in admin dashboard
+// Counts distinct users who have that game in their game profiles
+const getGameStats = async (req, res) => {
+  try {
+    const stats = await Promise.all(
+      SUPPORTED_GAMES.map(async (game) => {
+        const playerCount = await prisma.userGameProfile.count({
+          where: { game: game.name },
+        })
+        // Also count how many tournaments exist for this game
+        const tournamentCount = await prisma.tournament.count({
+          where: { game: game.name, status: { notIn: ['CANCELLED'] } },
+        })
+        return {
+          game:         game.name,
+          platform:     game.platform,
+          icon:         game.icon,
+          players:      playerCount,
+          tournaments:  tournamentCount,
+        }
+      })
+    )
+    // Sort by player count descending
+    stats.sort((a, b) => b.players - a.players)
+    const totalPlayers = stats.reduce((sum, g) => sum + g.players, 0)
+    res.json({ stats, totalPlayers })
+  } catch (err) {
+    console.error('getGameStats error:', err)
+    res.status(500).json({ message: 'Server error' })
+  }
 }
 
 // ── GET /api/games/my-profiles ───────────────────────────────────────────────
@@ -271,6 +303,7 @@ const getMyStatsSummary = async (req, res) => {
 
 module.exports = {
   getSupportedGames,
+  getGameStats,
   getMyGameProfiles,
   getUserGameProfiles,
   addGameProfile,

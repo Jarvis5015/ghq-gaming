@@ -65,6 +65,7 @@ export const economyAPI = {
 
 export const gameAPI = {
   getSupportedGames:  ()           => request('/games/supported'),
+  getGameStats:       ()           => request('/games/platform-stats'),
   getMyProfiles:      ()           => request('/games/my-profiles'),
   getMyStats:         ()           => request('/games/stats/summary'),
   addGame:            (body)       => request('/games/my-profiles', { method: 'POST', body: JSON.stringify(body) }),
