@@ -1,0 +1,67 @@
+=========================================
+GHQ LOCAL SETUP HELP
+=========================================
+
+If the automatic setup had issues with
+PostgreSQL, follow these manual steps:
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 1 — Set PostgreSQL password
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+After installing PostgreSQL, set the
+postgres user password to: ghqadmin123
+
+1. Open "pgAdmin" from Start Menu
+   OR open Command Prompt and type:
+   psql -U postgres
+
+2. If it asks for a password, try:
+   - blank (just press Enter)
+   - postgres
+   - admin
+
+3. Once inside psql, run:
+   ALTER USER postgres PASSWORD 'ghqadmin123';
+   \q
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 2 — Create the database
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+In Command Prompt:
+  psql -U postgres -c "CREATE DATABASE ghq_db;"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 3 — Run migrations
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+In Command Prompt:
+  cd E:\programing\GHQ\server
+  npx prisma migrate dev --name init
+  node prisma/seed.js
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DATABASE_URL FORMAT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+In server/.env the DATABASE_URL is:
+postgresql://postgres:ghqadmin123@localhost:5432/ghq_db
+
+Format: postgresql://USER:PASSWORD@HOST:PORT/DBNAME
+- USER     = postgres  (default)
+- PASSWORD = ghqadmin123  (what you set in step 1)
+- HOST     = localhost
+- PORT     = 5432  (PostgreSQL default)
+- DBNAME   = ghq_db
+
+If your password is different, update
+the DATABASE_URL in server/.env
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LOCAL LOGIN AFTER SEED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Admin:  admin@ghq.gg   / admin123
+Player: phantom@ghq.gg / player123
