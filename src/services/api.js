@@ -25,12 +25,12 @@ const request = async (endpoint, options = {}) => {
 }
 
 export const authAPI = {
-  register:       (body)                   => request('/auth/register',       { method: 'POST', body: JSON.stringify(body) }),
-  login:          (body)                   => request('/auth/login',           { method: 'POST', body: JSON.stringify(body) }),
+  register:       (body)                   => request('/auth/register',      { method: 'POST', body: JSON.stringify(body) }),
+  login:          (body)                   => request('/auth/login',          { method: 'POST', body: JSON.stringify(body) }),
   getMe:          ()                       => request('/auth/me'),
-  googleAuth:     (idToken)               => request('/auth/google',           { method: 'POST', body: JSON.stringify({ idToken }) }),
-  googleComplete: (googleToken, username) => request('/auth/google/complete',  { method: 'POST', body: JSON.stringify({ googleToken, username }) }),
-  checkUsername:  (username)              => request('/auth/check-username',   { method: 'POST', body: JSON.stringify({ username }) }),
+  googleAuth:     (idToken)               => request('/auth/google',          { method: 'POST', body: JSON.stringify({ idToken }) }),
+  googleComplete: (googleToken, username) => request('/auth/google/complete', { method: 'POST', body: JSON.stringify({ googleToken, username }) }),
+  checkUsername:  (username)              => request('/auth/check-username',  { method: 'POST', body: JSON.stringify({ username }) }),
 }
 
 export const userAPI = {
@@ -56,11 +56,12 @@ export const tournamentAPI = {
 }
 
 export const economyAPI = {
-  getBalance:      ()     => request('/economy/balance'),
-  getTransactions: ()     => request('/economy/transactions'),
-  claimDailyBonus: ()     => request('/economy/daily-bonus', { method: 'POST' }),
-  getAchievements: ()     => request('/economy/achievements'),
-  adminGrant:      (body) => request('/economy/grant', { method: 'POST', body: JSON.stringify(body) }),
+  getBalance:      ()              => request('/economy/balance'),
+  getTransactions: ()              => request('/economy/transactions'),
+  claimDailyBonus: ()              => request('/economy/daily-bonus', { method: 'POST' }),
+  getAchievements: ()              => request('/economy/achievements'),
+  convertCoins:    (gollarsWanted) => request('/economy/convert',     { method: 'POST', body: JSON.stringify({ gollarsWanted }) }),
+  adminGrant:      (body)          => request('/economy/grant',       { method: 'POST', body: JSON.stringify(body) }),
 }
 
 export const gameAPI = {
@@ -87,11 +88,11 @@ export const walletAPI = {
 }
 
 export const withdrawAPI = {
-  request:       (body)     => request('/withdraw/request',              { method: 'POST', body: JSON.stringify(body) }),
+  request:       (body)     => request('/withdraw/request',            { method: 'POST', body: JSON.stringify(body) }),
   getMyRequests: ()         => request('/withdraw/my-requests'),
   getAll:        (status)   => request(`/withdraw/admin/all${status ? `?status=${status}` : ''}`),
-  markPaid:      (id)       => request(`/withdraw/admin/${id}/pay`,      { method: 'POST' }),
-  reject:        (id, note) => request(`/withdraw/admin/${id}/reject`,   { method: 'POST', body: JSON.stringify({ note }) }),
+  markPaid:      (id)       => request(`/withdraw/admin/${id}/pay`,    { method: 'POST' }),
+  reject:        (id, note) => request(`/withdraw/admin/${id}/reject`, { method: 'POST', body: JSON.stringify({ note }) }),
 }
 
 export const adAPI = {
@@ -107,6 +108,14 @@ export const configAPI = {
   getPublic: ()        => request('/config/public'),
   getAdmin:  ()        => request('/config/admin'),
   save:      (updates) => request('/config/admin', { method: 'PUT', body: JSON.stringify({ updates }) }),
+}
+
+export const announcementAPI = {
+  getAll:   ()         => request('/announcements'),
+  getAdmin: ()         => request('/announcements/admin'),
+  create:   (body)     => request('/announcements',       { method: 'POST',   body: JSON.stringify(body) }),
+  update:   (id, body) => request(`/announcements/${id}`, { method: 'PUT',    body: JSON.stringify(body) }),
+  delete:   (id)       => request(`/announcements/${id}`, { method: 'DELETE' }),
 }
 
 export default request
