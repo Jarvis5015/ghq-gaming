@@ -1,100 +1,55 @@
 // src/components/ads/AdSense.jsx
-// Reusable Google AdSense ad unit component
-//
-// HOW TO USE:
-//   1. Replace YOUR_PUB_ID in index.html with your real ca-pub-XXXXXXXXXXXXXXXX
-//   2. Create ad units in AdSense dashboard → Ads → By ad unit
-//   3. Copy the data-ad-slot number for each unit and pass it as slotId prop
-//
-// SLOT TYPES YOU SHOULD CREATE IN ADSENSE:
-//   - "GHQ Leaderboard"   → 728x90  → use for banners
-//   - "GHQ Rectangle"     → 300x250 → use for sidebar
-//   - "GHQ Gate Ad"       → 336x280 → use for tournament ad gate
-//   - "GHQ In-Article"    → responsive → use inline in pages
+// Real Google AdSense component
+// CURRENTLY: Shows placeholder GHQ promo ads until AdSense is approved
+// LATER: Replace PUB_ID and AD_SLOTS with real values from AdSense dashboard
 
 import { useEffect, useRef } from 'react'
+import { AdBanner } from './AdPlaceholder'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FILL IN YOUR ACTUAL SLOT IDs BELOW after creating units in AdSense dashboard
-// AdSense dashboard → Ads → By ad unit → Create ad unit → copy the slot number
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Fill these in after AdSense approval ─────────────────────────────────────
 export const AD_SLOTS = {
-  leaderboard: 'XXXXXXXXXX',   // 728×90  — top/bottom banners
-  rectangle:   'XXXXXXXXXX',   // 300×250 — sidebar / inline
-  gate:        'XXXXXXXXXX',   // 336×280 — tournament gate modal
-  inArticle:   'XXXXXXXXXX',   // auto    — in-page responsive
+  leaderboard: 'XXXXXXXXXX',   // 728×90
+  rectangle:   'XXXXXXXXXX',   // 300×250
+  gate:        'XXXXXXXXXX',   // 336×280
+  inArticle:   'XXXXXXXXXX',   // auto
 }
-
-// Your AdSense publisher ID — same as what's in index.html
 export const PUB_ID = 'ca-pub-XXXXXXXXXXXXXXXX'
-
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * AdSense component
- * @param {string}  slotId     - AdSense data-ad-slot value (from AD_SLOTS)
- * @param {string}  format     - "auto" | "rectangle" | "leaderboard" (default "auto")
- * @param {string}  style      - inline style string for the container div
- * @param {boolean} fullWidth  - if true, sets width:100%
- * @param {string}  className  - extra Tailwind/CSS classes on wrapper
- * @param {string}  label      - optional small label shown above ad (e.g. "Advertisement")
- */
-export default function AdSense({
-  slotId,
-  format      = 'auto',
-  style       = '',
-  fullWidth   = true,
-  className   = '',
-  label       = 'Advertisement',
-}) {
-  const ref       = useRef(null)
-  const pushed    = useRef(false)
+const APPROVED = PUB_ID !== 'ca-pub-XXXXXXXXXXXXXXXX'   // false until you fill in real ID
+
+let adCounter = 0  // global counter for cycling placeholder ads
+
+export default function AdSense({ slotId, format = 'auto', style = '', fullWidth = true, className = '', label = 'Advertisement' }) {
+  const ref    = useRef(null)
+  const pushed = useRef(false)
+  const index  = useRef(adCounter++)
 
   useEffect(() => {
-    // Push only once per mount — AdSense throws if you push twice
+    if (!APPROVED) return           // don't push placeholder ads to AdSense
     if (pushed.current) return
     pushed.current = true
-
     try {
-      // adsbygoogle is injected by the script in index.html
-      // eslint-disable-next-line no-undef
       ;(window.adsbygoogle = window.adsbygoogle || []).push({})
-    } catch (e) {
-      // Silently fail in dev or if AdSense blocked
-    }
+    } catch (e) {}
   }, [])
 
+  // Not approved yet — show placeholder
+  if (!APPROVED) {
+    const size = format === 'rectangle' ? 'rectangle' : 'leaderboard'
+    return <AdBanner size={size} index={index.current} className={className} />
+  }
+
+  // Real AdSense unit
   return (
     <div className={`ghq-ad-wrap ${className}`}>
-      {label && (
-        <div className="font-mono text-[9px] text-[#4a5568]/60 tracking-widest text-center mb-1">
-          {label}
-        </div>
-      )}
-      <ins
-        ref={ref}
-        className="adsbygoogle"
-        style={{
-          display:   'block',
-          width:      fullWidth ? '100%' : undefined,
-          ...parseStyle(style),
-        }}
+      {label && <div className="font-mono text-[9px] text-[#4a5568]/60 tracking-widest text-center mb-1">{label}</div>}
+      <ins ref={ref} className="adsbygoogle"
+        style={{ display:'block', width: fullWidth ? '100%' : undefined }}
         data-ad-client={PUB_ID}
         data-ad-slot={slotId}
         data-ad-format={format}
-        data-full-width-responsive={fullWidth ? 'true' : 'false'}
-      />
+        data-full-width-responsive={fullWidth ? 'true' : 'false'} />
     </div>
-  )
-}
-
-// Parse "key:value;key:value" strings into style object (for convenience)
-function parseStyle(s) {
-  if (!s || typeof s !== 'string') return {}
-  return Object.fromEntries(
-    s.split(';').filter(Boolean).map(p => {
-      const [k, v] = p.split(':')
-      return [k.trim().replace(/-([a-z])/g, (_, c) => c.toUpperCase()), v?.trim()]
-    })
   )
 }
