@@ -19,22 +19,22 @@ export default function TournamentCard({ tournament, index = 0 }) {
   const { user, isLoggedIn, updateGollers, updateUser } = useAuthStore()
 
   // Normalize — DB returns uppercase
-  const typeLower   = (t.type   || '').toLowerCase()
-  const modeLower   = (t.mode   || '').toLowerCase()
+  const typeLower = (t.type || '').toLowerCase()
+  const modeLower = (t.mode || '').toLowerCase()
   const statusLower = (t.status || '').toLowerCase()
 
-  const isChampion  = typeLower   === 'champions'
-  const isPaid      = modeLower   === 'paid' && (t.entryFee > 0)
-  const isLive      = statusLower === 'live'
+  const isChampion = typeLower === 'champions'
+  const isPaid = modeLower === 'paid' && (t.entryFee > 0)
+  const isLive = statusLower === 'live'
   const isCompleted = statusLower === 'completed'
 
-  const ac       = gameColors[t.game] || '#00f5ff'
-  const current  = t.registeredPlayers ?? t.players?.current ?? 0
-  const max      = t.maxPlayers        ?? t.players?.max     ?? 1
-  const fillPct  = Math.min(100, Math.round((current / max) * 100))
+  const ac = gameColors[t.game] || '#00f5ff'
+  const current = t.registeredPlayers ?? t.players?.current ?? 0
+  const max = t.maxPlayers ?? t.players?.max ?? 1
+  const fillPct = Math.min(100, Math.round((current / max) * 100))
 
-  const [joining,   setJoining]   = useState(false)
-  const [joinMsg,   setJoinMsg]   = useState('')
+  const [joining, setJoining] = useState(false)
+  const [joinMsg, setJoinMsg] = useState('')
   const [joinError, setJoinError] = useState('')
 
   const handleJoin = async (e) => {
@@ -75,8 +75,10 @@ export default function TournamentCard({ tournament, index = 0 }) {
       style={{ clipPath: 'polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))' }}
     >
       <div className="absolute -inset-px opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{ background: `linear-gradient(135deg, ${ac}44, transparent, ${ac}22)`,
-          clipPath: 'polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))' }} />
+        style={{
+          background: `linear-gradient(135deg, ${ac}44, transparent, ${ac}22)`,
+          clipPath: 'polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))'
+        }} />
 
       <div className="relative bg-[#0d1428] border border-[#1a2545] h-full overflow-hidden"
         style={{ clipPath: 'polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))' }}>
@@ -149,8 +151,12 @@ export default function TournamentCard({ tournament, index = 0 }) {
               )}
             </div>
             <div className="text-right">
-              <div className="font-mono text-[9px] text-[#4a5568] tracking-wider mb-0.5">GHQ COINS</div>
-              <div className="font-display font-semibold text-sm text-[#ffd700]">+{(t.coinReward || 0).toLocaleString()}</div>
+              {(t.coinReward > 0) && (
+                <>
+                  <div className="font-mono text-[9px] text-[#4a5568] tracking-wider mb-0.5">GHQ COINS</div>
+                  <div className="font-display font-semibold text-sm text-[#ffd700]">+{t.coinReward.toLocaleString()} ⬡</div>
+                </>
+              )}
             </div>
           </div>
 
@@ -164,13 +170,13 @@ export default function TournamentCard({ tournament, index = 0 }) {
 
           <AnimatePresence>
             {joinMsg && (
-              <motion.div initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 className="mb-3 px-3 py-2 border border-[#00ff88]/30 bg-[#00ff88]/10 font-mono text-xs text-[#00ff88]">
                 ✓ {joinMsg}
               </motion.div>
             )}
             {joinError && (
-              <motion.div initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 className="mb-3 px-3 py-2 border border-[#ff2d55]/30 bg-[#ff2d55]/10 font-mono text-xs text-[#ff2d55]">
                 {joinError}
                 {joinError.includes('Gollar') && (
