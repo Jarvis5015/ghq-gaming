@@ -547,27 +547,85 @@ export default function TournamentDetail() {
                 isLive={isLive}
               />
 
-              <motion.div initial={{ opacity:0, x:20 }} whileInView={{ opacity:1, x:0 }} viewport={{ once: true }}
-                className="border border-[#1a2545] bg-[#0a0f1e] p-5">
-                <h3 className="font-display font-bold text-lg text-white mb-4">COIN <span className="text-[#ffd700]">REWARDS</span></h3>
-                <div className="space-y-2">
-                  {[
-                    ['🏆', '1st Place',   isChampion ? '+5,000 ⬡' : '+2,000 ⬡', '#ffd700'],
-                    ['🥈', '2nd Place',   isChampion ? '+2,500 ⬡' : '+1,000 ⬡', '#c0c0c0'],
-                    ['🥉', '3rd Place',   isChampion ? '+1,500 ⬡' : '+500 ⬡',   '#cd7f32'],
-                    ['📊', 'Top 10',      '+200 ⬡', '#00f5ff'],
-                    ['⚔️', 'Participate', '+50 ⬡',  '#7c3aed'],
-                  ].map(([icon, label, reward, color]) => (
-                    <div key={label} className="flex items-center justify-between p-3 border border-[#1a2545]">
-                      <div className="flex items-center gap-2">
-                        <span>{icon}</span>
-                        <span className="font-body text-sm text-[#e8eaf6]/70">{label}</span>
-                      </div>
-                      <span className="font-mono text-sm font-bold" style={{ color }}>{reward}</span>
+              {/* ── REAL COIN REWARDS from prize tiers ── */}
+              {(() => {
+                const tiers      = Array.isArray(t.prizeTiers) ? t.prizeTiers : []
+                const joinReward = t.coinReward || 0
+
+                // Only render the box if there's something real to show
+                const hasTiers    = tiers.some(tier => tier.coins > 0)
+                const hasJoin     = joinReward > 0
+                if (!hasTiers && !hasJoin) return null
+
+                const PLACEMENT_META = {
+                  1: { icon: '🏆', label: '1st Place',  color: '#ffd700' },
+                  2: { icon: '🥈', label: '2nd Place',  color: '#c0c0c0' },
+                  3: { icon: '🥉', label: '3rd Place',  color: '#cd7f32' },
+                  4: { icon: '4️⃣',  label: '4th Place',  color: '#00f5ff' },
+                  5: { icon: '5️⃣',  label: '5th Place',  color: '#00f5ff' },
+                }
+
+                // Sort tiers by placement ascending
+                const sortedTiers = [...tiers]
+                  .filter(tier => tier.coins > 0)
+                  .sort((a, b) => a.placement - b.placement)
+
+                return (
+                  <motion.div initial={{ opacity:0, x:20 }} whileInView={{ opacity:1, x:0 }} viewport={{ once: true }}
+                    className="border border-[#1a2545] bg-[#0a0f1e] p-5">
+                    <h3 className="font-display font-bold text-lg text-white mb-4">
+                      COIN <span className="text-[#ffd700]">REWARDS</span>
+                    </h3>
+                    <div className="space-y-2">
+
+                      {/* Prize tier rows — only tiers with coins > 0 */}
+                      {sortedTiers.map(tier => {
+                        const meta  = PLACEMENT_META[tier.placement]
+                        const icon  = meta?.icon  || `#${tier.placement}`
+                        const label = meta?.label || `#${tier.placement} Place`
+                        const color = meta?.color || '#00f5ff'
+                        return (
+                          <div key={tier.placement} className="flex items-center justify-between p-3 border border-[#1a2545]">
+                            <div className="flex items-center gap-2">
+                              <span>{icon}</span>
+                              <div>
+                                <span className="font-body text-sm text-[#e8eaf6]/70">{label}</span>
+                                {/* Also show Gollar prize if set */}
+                                {tier.gollars > 0 && (
+                                  <div className="font-mono text-[10px] text-[#f5a623]">🪙 {tier.gollars} Gollars</div>
+                                )}
+                              </div>
+                            </div>
+                            <span className="font-mono text-sm font-bold" style={{ color }}>
+                              +{tier.coins.toLocaleString()} ⬡
+                            </span>
+                          </div>
+                        )
+                      })}
+
+                      {/* Join / participation reward — only if > 0 */}
+                      {hasJoin && (
+                        <div className="flex items-center justify-between p-3 border border-[#1a2545] border-dashed">
+                          <div className="flex items-center gap-2">
+                            <span>⚔️</span>
+                            <span className="font-body text-sm text-[#e8eaf6]/70">Participation</span>
+                          </div>
+                          <span className="font-mono text-sm font-bold text-[#7c3aed]">
+                            +{joinReward.toLocaleString()} ⬡
+                          </span>
+                        </div>
+                      )}
+
+                      {/* No coin rewards set */}
+                      {!hasTiers && !hasJoin && (
+                        <div className="text-center py-4 font-mono text-xs text-[#4a5568]">
+                          No coin rewards set for this tournament
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </motion.div>
+                  </motion.div>
+                )
+              })()}
 
               <AdSense slotId={AD_SLOTS.rectangle} format="rectangle" fullWidth={true} />
             </div>
