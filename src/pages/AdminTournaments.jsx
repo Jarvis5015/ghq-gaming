@@ -66,6 +66,267 @@ function PrizeTierBuilder({ tiers, onChange }) {
   )
 }
 
+// ── Edit Tournament Form ─────────────────────────────────────────────────────
+function EditForm({ tournament, onSaved, onCancel }) {
+  const toLocalDT = (iso) => iso ? new Date(new Date(iso) - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : ''
+  const toLocalD  = (iso) => iso ? new Date(new Date(iso) - new Date().getTimezoneOffset()*60000).toISOString().slice(0,10) : ''
+  const toLocalT  = (iso) => iso ? new Date(new Date(iso) - new Date().getTimezoneOffset()*60000).toISOString().slice(11,16) : '18:00'
+
+  const [form,    setForm]    = useState({
+    name:              tournament.name        || '',
+    game:              tournament.game        || '',
+    platform:          tournament.platform    || 'PC',
+    type:              tournament.type        || 'TOURNAMENT',
+    mode:              tournament.mode        || 'FREE',
+    teamSize:          tournament.teamSize    || 'Solo',
+    entryFee:          tournament.entryFee    ?? '',
+    prizePool:         tournament.prizePool   ?? '',
+    coinReward:        tournament.coinReward  ?? '',
+    maxPlayers:        tournament.maxPlayers  ?? 64,
+    description:       tournament.description || '',
+    rules:             Array.isArray(tournament.rules) ? tournament.rules.join('\n') : '',
+    registrationStart: toLocalDT(tournament.registrationStart),
+    registrationEnd:   toLocalDT(tournament.registrationEnd),
+    startDate:         toLocalD(tournament.startDate),
+    startTime:         toLocalT(tournament.startDate),
+    tournamentEnd:     toLocalDT(tournament.tournamentEnd),
+    prizeTiers:        Array.isArray(tournament.prizeTiers) ? tournament.prizeTiers : [],
+    adsRequired:       tournament.adsRequired ?? 0,
+  })
+  const [saving, setSaving] = useState(false)
+  const [msg,    setMsg]    = useState('')
+  const [error,  setError]  = useState('')
+
+  const games    = ['Valorant','BGMI','Free Fire','COD Mobile','PUBG','CS2','Fortnite','Clash Royale']
+  const inputCls = "w-full px-3 py-2.5 bg-[#050810] border border-[#1a2545] text-[#e8eaf6] font-body text-sm placeholder-[#4a5568]/50 focus:outline-none focus:border-[#00f5ff]/40 transition-colors"
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleSave = async (e) => {
+    e.preventDefault()
+    setSaving(true); setMsg(''); setError('')
+    try {
+      const startDT = new Date(`${form.startDate}T${form.startTime || '18:00'}`)
+      await tournamentAPI.update(tournament.id, {
+        name:              form.name,
+        game:              form.game,
+        platform:          form.platform,
+        type:              form.type,
+        mode:              form.mode,
+        teamSize:          form.teamSize,
+        entryFee:          Number(form.entryFee)   || 0,
+        prizePool:         Number(form.prizePool)  || 0,
+        coinReward:        Number(form.coinReward) || 0,
+        maxPlayers:        Number(form.maxPlayers) || 64,
+        description:       form.description,
+        rules:             form.rules.split('\n').filter(Boolean),
+        startDate:         startDT.toISOString(),
+        registrationStart: form.registrationStart ? new Date(form.registrationStart).toISOString() : null,
+        registrationEnd:   form.registrationEnd   ? new Date(form.registrationEnd).toISOString()   : null,
+        tournamentEnd:     form.tournamentEnd      ? new Date(form.tournamentEnd).toISOString()     : null,
+        prizeTiers:        form.prizeTiers,
+        adsRequired:       Number(form.adsRequired) || 0,
+      })
+      setMsg('✓ Tournament updated successfully!')
+      setTimeout(() => { onSaved && onSaved() }, 1200)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="max-w-3xl">
+      <div className="flex items-center gap-4 mb-6">
+        <button onClick={onCancel} className="font-mono text-xs text-[#4a5568] hover:text-white transition-colors">← Cancel</button>
+        <div>
+          <div className="font-mono text-[10px] text-[#ffd700] tracking-widest mb-0.5">EDITING</div>
+          <h3 className="font-display font-bold text-2xl text-white">{tournament.name}</h3>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {msg   && <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="mb-4 p-3 border border-[#00ff88]/30 bg-[#00ff88]/10 font-mono text-sm text-[#00ff88]">{msg}</motion.div>}
+        {error && <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="mb-4 p-3 border border-[#ff2d55]/30 bg-[#ff2d55]/10 font-mono text-sm text-[#ff2d55]">⚠ {error}</motion.div>}
+      </AnimatePresence>
+
+      <form onSubmit={handleSave} className="space-y-6">
+        {/* Name + Game */}
+        <div className="grid md:grid-cols-2 gap-5">
+          <div>
+            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Tournament Name *</label>
+            <input required value={form.name} onChange={e => set('name', e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Game *</label>
+            <select required value={form.game} onChange={e => set('game', e.target.value)} className={inputCls + ' cursor-pointer'}>
+              <option value="">Select game...</option>
+              {games.map(g => <option key={g}>{g}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Platform + Type */}
+        <div className="grid md:grid-cols-2 gap-5">
+          <div>
+            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Platform</label>
+            <div className="flex gap-2">
+              {['PC','Mobile','Both'].map(p => (
+                <button key={p} type="button" onClick={() => set('platform', p)}
+                  className={`flex-1 py-2.5 font-display text-xs tracking-wider uppercase border transition-all ${form.platform===p?'border-[#00f5ff] text-[#00f5ff] bg-[#00f5ff]/10':'border-[#1a2545] text-[#4a5568] hover:text-white'}`}>
+                  {p==='PC'?'🖥️':p==='Mobile'?'📱':'🎮'} {p}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Type</label>
+            <div className="flex gap-2">
+              {[['TOURNAMENT','🏆 Open'],['CHAMPIONS','👑 Champions']].map(([v,l]) => (
+                <button key={v} type="button" onClick={() => set('type', v)}
+                  className={`flex-1 py-2.5 font-display text-xs tracking-wider uppercase border transition-all ${form.type===v?(v==='CHAMPIONS'?'border-[#ffd700] text-[#ffd700] bg-[#ffd700]/10':'border-[#00f5ff] text-[#00f5ff] bg-[#00f5ff]/10'):'border-[#1a2545] text-[#4a5568] hover:text-white'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Team Size + Entry Mode */}
+        <div className="grid md:grid-cols-2 gap-5">
+          <div>
+            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Team Size</label>
+            <div className="flex gap-2">
+              {[['Solo','👤'],['Duo','👥'],['Squad','👥👥'],['Custom','⚙️']].map(([v,icon]) => (
+                <button key={v} type="button" onClick={() => set('teamSize', v)}
+                  className={`flex-1 py-2.5 font-display text-xs tracking-wider uppercase border transition-all ${form.teamSize===v?'border-[#00ff88] text-[#00ff88] bg-[#00ff88]/10':'border-[#1a2545] text-[#4a5568] hover:text-white'}`}>
+                  {icon} {v}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Entry Mode</label>
+            <div className="flex gap-2">
+              {[['FREE','🇦 Free'],['PAID','🪙 Paid']].map(([v,l]) => (
+                <button key={v} type="button" disabled={form.type==='CHAMPIONS'&&v==='FREE'} onClick={() => set('mode', v)}
+                  className={`flex-1 py-2.5 font-display text-xs tracking-wider uppercase border transition-all disabled:opacity-30 ${form.mode===v?(v==='PAID'?'border-[#f5a623] text-[#f5a623] bg-[#f5a623]/10':'border-[#00ff88] text-[#00ff88] bg-[#00ff88]/10'):'border-[#1a2545] text-[#4a5568] hover:text-white'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Numbers */}
+        <div className="grid md:grid-cols-3 gap-5">
+          {form.mode==='PAID' && (
+            <div>
+              <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Entry Fee (🪙 Gollars)</label>
+              <input type="number" min="0" value={form.entryFee} onChange={e => set('entryFee', e.target.value)} className={inputCls} />
+            </div>
+          )}
+          <div>
+            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Prize Pool (₹)</label>
+            <input type="number" min="0" value={form.prizePool} onChange={e => set('prizePool', e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Join Coin Reward (0 = none)</label>
+            <input type="number" min="0" value={form.coinReward} onChange={e => set('coinReward', e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Max Players</label>
+            <select value={form.maxPlayers} onChange={e => set('maxPlayers', e.target.value)} className={inputCls + ' cursor-pointer'}>
+              {['8','16','32','64','100','128','256'].map(n => <option key={n}>{n}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Schedule */}
+        <div className="border border-[#00f5ff]/20 p-5 space-y-4" style={{clipPath:'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)'}}>
+          <div className="font-mono text-[10px] text-[#00f5ff] tracking-widest uppercase">📅 SCHEDULE</div>
+          <div className="grid md:grid-cols-2 gap-5">
+            <div>
+              <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Registration Opens</label>
+              <input type="datetime-local" value={form.registrationStart} onChange={e => set('registrationStart', e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Registration Closes</label>
+              <input type="datetime-local" value={form.registrationEnd} onChange={e => set('registrationEnd', e.target.value)} className={inputCls} />
+            </div>
+          </div>
+          <div className="grid md:grid-cols-3 gap-5">
+            <div>
+              <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Start Date</label>
+              <input type="date" value={form.startDate} onChange={e => set('startDate', e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Start Time</label>
+              <input type="time" value={form.startTime} onChange={e => set('startTime', e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Tournament Ends</label>
+              <input type="datetime-local" value={form.tournamentEnd} onChange={e => set('tournamentEnd', e.target.value)} className={inputCls} />
+            </div>
+          </div>
+        </div>
+
+        {/* Ad Gate */}
+        {form.mode==='FREE' && (
+          <div className="border border-[#00f5ff]/20 p-5 space-y-3" style={{clipPath:'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)'}}>
+            <div className="font-mono text-[10px] text-[#00f5ff] tracking-widest uppercase">📺 AD GATE</div>
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="w-40">
+                <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Ads Required</label>
+                <input type="number" min="0" max="10" value={form.adsRequired}
+                  onChange={e => set('adsRequired', Math.max(0, Math.min(10, Number(e.target.value)||0)))} className={inputCls} />
+              </div>
+              <div className="flex gap-1.5 pb-0.5">
+                {[0,1,2,3,5].map(n => (
+                  <button key={n} type="button" onClick={() => set('adsRequired', n)}
+                    className={`px-3 py-2.5 font-mono text-[10px] border transition-all ${Number(form.adsRequired)===n?'border-[#00f5ff] text-[#00f5ff] bg-[#00f5ff]/10':'border-[#1a2545] text-[#4a5568] hover:text-white'}`}>
+                    {n===0?'None':`${n} ad${n!==1?'s':''}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Prize Tiers */}
+        <div className="border border-[#f5a623]/20 p-5" style={{clipPath:'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)'}}>
+          <div className="font-mono text-[10px] text-[#f5a623] tracking-widest uppercase mb-4">🪙 PRIZE TIERS</div>
+          <PrizeTierBuilder tiers={form.prizeTiers} onChange={tiers => set('prizeTiers', tiers)} />
+        </div>
+
+        <div>
+          <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Description</label>
+          <textarea rows={3} value={form.description} onChange={e => set('description', e.target.value)} className={inputCls + ' resize-none'} />
+        </div>
+        <div>
+          <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Rules (one per line)</label>
+          <textarea rows={4} value={form.rules} onChange={e => set('rules', e.target.value)} className={inputCls + ' resize-none font-mono text-xs'} />
+        </div>
+
+        <div className="flex gap-3">
+          <button type="button" onClick={onCancel}
+            className="px-6 py-3 border border-[#1a2545] font-display text-sm tracking-widest uppercase text-[#4a5568] hover:text-white transition-all">
+            Cancel
+          </button>
+          <button type="submit" disabled={saving}
+            className="relative px-8 py-3 overflow-hidden group disabled:opacity-50"
+            style={{clipPath:'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)'}}>
+            <div className="absolute inset-0 bg-[#ffd700] group-hover:bg-[#ffd700]/85 transition-colors" />
+            <span className="relative font-display font-bold text-sm tracking-widest uppercase text-[#050810]">
+              {saving ? 'Saving...' : '💾 Save Changes'}
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
 // ── Set Room Credentials Form ─────────────────────────────────────────────────
 function SetRoomForm({ tournament, onSaved }) {
   const [roomId,   setRoomId]   = useState(tournament?.roomId       || '')

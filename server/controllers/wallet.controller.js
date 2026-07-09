@@ -283,21 +283,30 @@ const joinTournamentWithGollars = async (req, res) => {
 
     const entryFee           = tournament.entryFee || 0
     const isFree             = tournament.mode === 'FREE' || entryFee === 0
-    const participationCoins = 50
+    // Use the tournament's actual coinReward — 0 means no coins on join
+    const participationCoins = Number(tournament.coinReward) || 0
 
     if (isFree) {
-      await prisma.$transaction([
+      const ops = [
         prisma.registration.create({ data: { userId, tournamentId, gollersPaid: 0 } }),
-        prisma.user.update({
-          where: { id: userId },
-          data:  { coins: { increment: participationCoins }, totalEarned: { increment: participationCoins } },
-        }),
-        prisma.coinTransaction.create({
-          data: { userId, type: 'EARN', amount: participationCoins, label: `Joined ${tournament.name}`, game: tournament.game },
-        }),
-      ])
+      ]
+      // Only grant coins if coinReward > 0
+      if (participationCoins > 0) {
+        ops.push(
+          prisma.user.update({
+            where: { id: userId },
+            data:  { coins: { increment: participationCoins }, totalEarned: { increment: participationCoins } },
+          }),
+          prisma.coinTransaction.create({
+            data: { userId, type: 'EARN', amount: participationCoins, label: `⚔️ Joined: ${tournament.name}`, game: tournament.game },
+          })
+        )
+      }
+      await prisma.$transaction(ops)
       return res.status(201).json({
-        message:     `✓ Joined ${tournament.name}! +${participationCoins} GHQ Coins added.`,
+        message:     participationCoins > 0
+          ? `✓ Joined ${tournament.name}! +${participationCoins} GHQ Coins added.`
+          : `✓ Joined ${tournament.name}!`,
         gollarsPaid: 0,
         coinsEarned: participationCoins,
         free:        true,
@@ -315,26 +324,35 @@ const joinTournamentWithGollars = async (req, res) => {
       })
     }
 
-    await prisma.$transaction([
+    const paidOps = [
       prisma.user.update({
         where: { id: userId },
         data:  {
           gollers:    { decrement: entryFee },
           totalSpent: { increment: entryFee },
-          coins:       { increment: participationCoins },
-          totalEarned: { increment: participationCoins },
+          ...(participationCoins > 0 ? {
+            coins:       { increment: participationCoins },
+            totalEarned: { increment: participationCoins },
+          } : {}),
         },
       }),
       prisma.registration.create({ data: { userId, tournamentId, gollersPaid: entryFee } }),
-      prisma.coinTransaction.create({
-        data: { userId, type: 'EARN', amount: participationCoins, label: `Joined ${tournament.name}`, game: tournament.game },
-      }),
-    ])
+    ]
+    if (participationCoins > 0) {
+      paidOps.push(
+        prisma.coinTransaction.create({
+          data: { userId, type: 'EARN', amount: participationCoins, label: `⚔️ Joined: ${tournament.name}`, game: tournament.game },
+        })
+      )
+    }
+    await prisma.$transaction(paidOps)
 
     const updatedUser = await prisma.user.findUnique({ where: { id: userId }, select: { gollers: true } })
 
     res.status(201).json({
-      message:     `✓ Joined ${tournament.name}! 🪙 ${entryFee} Gollars deducted. +${participationCoins} GHQ Coins earned.`,
+      message:     participationCoins > 0
+        ? `✓ Joined ${tournament.name}! 🪙 ${entryFee} Gollars deducted. +${participationCoins} GHQ Coins earned.`
+        : `✓ Joined ${tournament.name}! 🪙 ${entryFee} Gollars deducted.`,
       gollarsPaid: entryFee,
       newBalance:  updatedUser.gollers,
       coinsEarned: participationCoins,

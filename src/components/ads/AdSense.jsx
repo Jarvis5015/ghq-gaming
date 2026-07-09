@@ -13,7 +13,7 @@ export const AD_SLOTS = {
   gate:        'XXXXXXXXXX',   // 336×280
   inArticle:   'XXXXXXXXXX',   // auto
 }
-export const PUB_ID = 'ca-pub-XXXXXXXXXXXXXXXX'
+export const PUB_ID = 'ca-pub-6895012947164003'
 // ─────────────────────────────────────────────────────────────────────────────
 
 const APPROVED = PUB_ID !== 'ca-pub-XXXXXXXXXXXXXXXX'   // false until you fill in real ID
