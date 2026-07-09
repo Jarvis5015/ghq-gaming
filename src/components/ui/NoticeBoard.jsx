@@ -41,7 +41,7 @@ export default function NoticeBoard() {
   const style  = TYPE_STYLES[active?.type] || TYPE_STYLES.info
 
   return (
-    <div className="max-w-7xl mx-auto px-6 mt-6">
+    <div className="max-w-7xl mx-auto px-6 pt-3 pb-2">
       {/* ── Scrolling ticker (if 1+ announcements) ── */}
       {announcements.length === 1 ? (
         // Single announcement — show full card

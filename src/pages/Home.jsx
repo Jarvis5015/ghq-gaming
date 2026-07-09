@@ -193,6 +193,11 @@ export default function Home() {
   return (
     <div className="relative min-h-screen">
 
+      {/* ── 📢 NOTICE BOARD — pinned just below navbar ── */}
+      <div className="sticky top-16 z-40 w-full" style={{ background: 'rgba(5,8,16,0.92)', backdropFilter: 'blur(8px)' }}>
+        <NoticeBoard />
+      </div>
+
       {/* ── HERO ── */}
       <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
         <HexGrid />
@@ -202,9 +207,18 @@ export default function Home() {
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative z-10 text-center px-6 max-w-5xl mx-auto">
           <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2 }}
             className="inline-flex items-center gap-3 mb-8 px-4 py-2 border border-[#00f5ff]/20 bg-[#00f5ff]/5 rounded-full">
-            <div className="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse" />
+            <div className={`w-2 h-2 rounded-full transition-colors ${
+              loading ? 'bg-[#4a5568]' :
+              liveCount > 0 ? 'bg-[#00ff88] animate-ping' : 'bg-[#00f5ff]'
+            }`} />
             <span className="font-mono text-xs text-[#00f5ff] tracking-widest uppercase">
-              {liveCount > 0 ? `${liveCount} Tournament${liveCount>1?'s':''} Live Right Now` : 'Platform Online · Tournaments Coming Soon'}
+              {loading
+                ? 'Loading...'
+                : liveCount > 0
+                  ? `${liveCount} Tournament${liveCount > 1 ? 's' : ''} Live Right Now 🔴`
+                  : tournaments.length > 0
+                    ? `${tournaments.length} Tournament${tournaments.length > 1 ? 's' : ''} · Register Now`
+                    : 'Platform Online · Tournaments Coming Soon'}
             </span>
           </motion.div>
 
@@ -261,9 +275,6 @@ export default function Home() {
           </motion.div>
         </motion.div>
       </section>
-
-      {/* ── 📢 NOTICE BOARD — shows admin announcements ── */}
-      <NoticeBoard />
 
       {/* ── STATS BAR ── */}
       <StatsBar tournaments={tournaments} leaderboard={leaderboard} />
