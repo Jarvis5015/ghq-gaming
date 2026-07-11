@@ -1,7 +1,7 @@
 // src/pages/AdminTournaments.jsx
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { tournamentAPI } from '../services/api'
+import { tournamentAPI, fakeAPI } from '../services/api'
 
 const GAME_COLORS = {
   Valorant: '#ff4655', BGMI: '#f5a623', 'Free Fire': '#ff6b35',
@@ -784,6 +784,141 @@ function ResultAnnouncer({ tournament, registrations, onDone }) {
   )
 }
 
+// ── Fake Players Panel ──────────────────────────────────────────────────────
+function FakePlayersPanel({ tournament, onDone }) {
+  const [count,    setCount]    = useState(10)
+  const [filling,  setFilling]  = useState(false)
+  const [cleaning, setCleaning] = useState(false)
+  const [msg,      setMsg]      = useState('')
+  const [error,    setError]    = useState('')
+  const [open,     setOpen]     = useState(false)
+
+  const slotsLeft = (tournament?.maxPlayers || 0) - (tournament?.registrations?.length || 0)
+
+  const handleFill = async () => {
+    if (!window.confirm(`Add ${count} fake players to "${tournament.name}"?`)) return
+    setFilling(true); setMsg(''); setError('')
+    try {
+      const res = await fakeAPI.fill(tournament.id, count)
+      setMsg(res.message)
+      onDone && onDone()
+    } catch (err) { setError(err.message) }
+    finally { setFilling(false) }
+  }
+
+  const handleClean = async () => {
+    if (!window.confirm('Remove ALL fake players from this tournament?')) return
+    setCleaning(true); setMsg(''); setError('')
+    try {
+      const res = await fakeAPI.clean(tournament.id)
+      setMsg(res.message)
+      onDone && onDone()
+    } catch (err) { setError(err.message) }
+    finally { setCleaning(false) }
+  }
+
+  return (
+    <div className="border border-[#7c3aed]/30 bg-[#0a0f1e] mb-6 overflow-hidden"
+      style={{ clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%)' }}>
+      <button onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-3 hover:bg-[#7c3aed]/5 transition-colors">
+        <div className="flex items-center gap-3">
+          <span className="text-lg">🤖</span>
+          <div className="text-left">
+            <div className="font-display font-bold text-sm text-[#7c3aed]">FAKE PLAYERS TOOL</div>
+            <div className="font-mono text-[10px] text-[#4a5568]">
+              Add realistic bot players to fill tournament slots — visible to real visitors
+            </div>
+          </div>
+        </div>
+        <span className="font-mono text-[10px] text-[#4a5568]">{open ? '▲' : '▼'}</span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
+            className="overflow-hidden">
+            <div className="px-5 pb-5 border-t border-[#7c3aed]/20 pt-4 space-y-4">
+
+              {/* Messages */}
+              <AnimatePresence>
+                {msg   && <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="p-3 border border-[#00ff88]/30 bg-[#00ff88]/10 font-mono text-xs text-[#00ff88]">{msg}</motion.div>}
+                {error && <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="p-3 border border-[#ff2d55]/30 bg-[#ff2d55]/10 font-mono text-xs text-[#ff2d55]">⚠ {error}</motion.div>}
+              </AnimatePresence>
+
+              {/* Slots info */}
+              <div className="flex items-center gap-4 p-3 border border-[#1a2545] bg-[#050810]">
+                <div>
+                  <div className="font-mono text-[9px] text-[#4a5568] tracking-widest">SLOTS LEFT</div>
+                  <div className="font-display font-bold text-xl text-white">{slotsLeft}</div>
+                </div>
+                <div className="h-8 w-px bg-[#1a2545]" />
+                <div>
+                  <div className="font-mono text-[9px] text-[#4a5568] tracking-widest">REGISTERED</div>
+                  <div className="font-display font-bold text-xl text-[#00f5ff]">{tournament?.registrations?.length || 0}</div>
+                </div>
+                <div className="h-8 w-px bg-[#1a2545]" />
+                <div>
+                  <div className="font-mono text-[9px] text-[#4a5568] tracking-widest">CAPACITY</div>
+                  <div className="font-display font-bold text-xl text-[#ffd700]">{tournament?.maxPlayers || 0}</div>
+                </div>
+              </div>
+
+              {/* Fill controls */}
+              <div>
+                <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-2">
+                  How many fake players to add?
+                </label>
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1.5">
+                    {[5, 10, 15, 20, 30].map(n => (
+                      <button key={n} type="button" onClick={() => setCount(n)}
+                        disabled={n > slotsLeft}
+                        className={`px-3 py-2 font-mono text-[10px] border transition-all disabled:opacity-30 ${
+                          count === n
+                            ? 'border-[#7c3aed] text-[#7c3aed] bg-[#7c3aed]/10'
+                            : 'border-[#1a2545] text-[#4a5568] hover:text-white'
+                        }`}>
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                  <input type="number" min="1" max={slotsLeft} value={count}
+                    onChange={e => setCount(Math.max(1, Math.min(slotsLeft, Number(e.target.value)||1)))}
+                    className="w-20 px-3 py-2 bg-[#050810] border border-[#1a2545] text-[#e8eaf6] font-mono text-sm text-center focus:outline-none focus:border-[#7c3aed]/50" />
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button onClick={handleFill} disabled={filling || slotsLeft <= 0}
+                  className="relative px-6 py-2.5 overflow-hidden group disabled:opacity-40"
+                  style={{ clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)' }}>
+                  <div className="absolute inset-0 bg-[#7c3aed] group-hover:bg-[#7c3aed]/85 transition-colors" />
+                  <span className="relative font-display font-bold text-xs tracking-widest uppercase text-white">
+                    {filling ? 'Adding...' : `🤖 Add ${count} Fake Player${count !== 1 ? 's' : ''}`}
+                  </span>
+                </button>
+
+                <button onClick={handleClean} disabled={cleaning}
+                  className="px-4 py-2.5 font-mono text-[10px] tracking-widest uppercase border border-[#ff2d55]/30 text-[#ff2d55]/70 hover:text-[#ff2d55] hover:border-[#ff2d55]/60 transition-all disabled:opacity-40">
+                  {cleaning ? 'Removing...' : '✕ Remove All Fake Players'}
+                </button>
+              </div>
+
+              <div className="font-mono text-[9px] text-[#4a5568] leading-relaxed">
+                💡 Fake players use realistic Indian gaming names and show real in-game IDs.
+                They appear in the registered players list and can be assigned placements when you announce results.
+                Use “Remove All Fake Players” to clean up after the event.
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ── Tournament Detail View ────────────────────────────────────────────────────
 function TournamentDetailView({ tournament, onBack, onRefresh, onEdit }) {
   const [full, setFull] = useState(null)
@@ -928,6 +1063,9 @@ function TournamentDetailView({ tournament, onBack, onRefresh, onEdit }) {
         <ResultAnnouncer tournament={full} registrations={full?.registrations} onDone={() => { setView('players'); onRefresh && onRefresh() }} />
       ) : (
         <div>
+          {/* ── Fake Players Panel ── */}
+          <FakePlayersPanel tournament={full || tournament} onDone={load} />
+
           <h4 className="font-display font-bold text-lg text-white mb-4">REGISTERED PLAYERS ({full?.registrations?.length || 0})</h4>
           {loading ? (
             <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-14 border border-[#1a2545] animate-pulse bg-[#0a0f1e]/40" />)}</div>

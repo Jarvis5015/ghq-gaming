@@ -110,6 +110,11 @@ export const configAPI = {
   save:      (updates) => request('/config/admin', { method: 'PUT', body: JSON.stringify({ updates }) }),
 }
 
+export const fakeAPI = {
+  fill:  (tournamentId, count) => request('/fake/fill-tournament',  { method: 'POST',   body: JSON.stringify({ tournamentId, count }) }),
+  clean: (tournamentId)       => request('/fake/clean-tournament',  { method: 'DELETE', body: JSON.stringify({ tournamentId }) }),
+}
+
 export const announcementAPI = {
   getAll:   ()         => request('/announcements'),
   getAdmin: ()         => request('/announcements/admin'),

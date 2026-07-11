@@ -17,6 +17,7 @@ const withdrawRoutes     = require('./routes/withdraw.routes')
 const adRoutes           = require('./routes/ad.routes')
 const configRoutes       = require('./routes/config.routes')
 const announcementRoutes = require('./routes/announcement.routes')
+const fakeRoutes         = require('./routes/fake.routes')
 
 const { startScheduler } = require('./scheduler')
 
@@ -101,6 +102,7 @@ app.use('/api/withdraw',      withdrawRoutes)
 app.use('/api/ads',           adRoutes)
 app.use('/api/config',        configRoutes)
 app.use('/api/announcements', announcementRoutes)
+app.use('/api/fake',          fakeRoutes)
 
 app.use('*', (req, res) => res.status(404).json({ message: `Route ${req.originalUrl} not found` }))
 app.use((err, req, res, next) => {
