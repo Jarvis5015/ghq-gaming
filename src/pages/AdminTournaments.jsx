@@ -21,12 +21,17 @@ function PrizeTierBuilder({ tiers, onChange }) {
   const PLACE = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th' }
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase">PRIZE TIERS</label>
-        <button type="button" onClick={addTier} className="px-3 py-1 font-mono text-[9px] tracking-widest uppercase border border-[#00f5ff]/30 text-[#00f5ff] hover:bg-[#00f5ff]/10">+ Add Tier</button>
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase">PRIZE TIERS</label>
+          <div className="font-mono text-[9px] text-[#4a5568] mt-0.5">Set 🪙 Gollars and/or ⬡ GHQ Coins per placement. You can give coins only — just leave Gollars at 0.</div>
+        </div>
+        <button type="button" onClick={addTier} className="px-3 py-1 font-mono text-[9px] tracking-widest uppercase border border-[#00f5ff]/30 text-[#00f5ff] hover:bg-[#00f5ff]/10 flex-shrink-0 ml-4">+ Add Tier</button>
       </div>
       {tiers.length === 0 ? (
-        <div className="border border-dashed border-[#1a2545] p-4 text-center font-mono text-xs text-[#4a5568]">No prize tiers — winners get GHQ Coins only.</div>
+        <div className="border border-dashed border-[#1a2545] p-4 text-center font-mono text-xs text-[#4a5568]">
+          No prize tiers yet. Click “+ Add Tier” to set prizes. You can give GHQ Coins only — no Gollars required.
+        </div>
       ) : (
         <div className="border border-[#1a2545]">
           <div className="grid grid-cols-12 gap-3 px-4 py-2 border-b border-[#1a2545] bg-[#050810]">
@@ -236,9 +241,11 @@ function EditForm({ tournament, onSaved, onCancel }) {
           </div>
           <div>
             <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Max Players</label>
-            <select value={form.maxPlayers} onChange={e => set('maxPlayers', e.target.value)} className={inputCls + ' cursor-pointer'}>
-              {['8', '16', '32', '64', '100', '128', '256'].map(n => <option key={n}>{n}</option>)}
-            </select>
+            <input type="number" min="2" max="10000" value={form.maxPlayers}
+              onChange={e => set('maxPlayers', e.target.value)}
+              placeholder="e.g. 64, 100, 200"
+              className={inputCls} />
+            <div className="font-mono text-[9px] text-[#4a5568] mt-1">Type any number — 2 to 10,000</div>
           </div>
         </div>
 
@@ -556,18 +563,24 @@ function CreateForm({ onCreated }) {
             </div>
           )}
           <div>
-            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Prize Pool (₹)</label>
-            <input type="number" min="0" value={form.prizePool} onChange={e => set('prizePool', e.target.value)} placeholder="e.g. 10000" className={inputCls} />
+            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">
+              Cash Prize Pool (₹) <span className="normal-case font-body text-[#4a5568]">— leave 0 for coins-only</span>
+            </label>
+            <input type="number" min="0" value={form.prizePool} onChange={e => set('prizePool', e.target.value)} placeholder="0" className={inputCls} />
+            <div className="font-mono text-[9px] text-[#4a5568] mt-1">Shown as ₹X on the tournament page. Set 0 if giving GHQ Coins only.</div>
           </div>
           <div>
-            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">GHQ Coin Reward (join)</label>
-            <input type="number" min="0" value={form.coinReward} onChange={e => set('coinReward', e.target.value)} placeholder="e.g. 100" className={inputCls} />
+            <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Join Coin Reward <span className="normal-case font-body text-[#4a5568]">— 0 = no coins on join</span></label>
+            <input type="number" min="0" value={form.coinReward} onChange={e => set('coinReward', e.target.value)} placeholder="0" className={inputCls} />
+            <div className="font-mono text-[9px] text-[#4a5568] mt-1">Given just for joining. Set 0 to disable.</div>
           </div>
           <div>
             <label className="font-mono text-[10px] text-[#4a5568] tracking-widest uppercase block mb-1.5">Max Players *</label>
-            <select value={form.maxPlayers} onChange={e => set('maxPlayers', e.target.value)} className={inputCls + ' cursor-pointer'}>
-              {['8', '16', '32', '64', '100', '128', '256'].map(n => <option key={n}>{n}</option>)}
-            </select>
+            <input type="number" min="2" max="10000" value={form.maxPlayers}
+              onChange={e => set('maxPlayers', e.target.value)}
+              placeholder="e.g. 64, 100, 200"
+              className={inputCls} />
+            <div className="font-mono text-[9px] text-[#4a5568] mt-1">Type any number — 2 to 10,000</div>
           </div>
         </div>
 
