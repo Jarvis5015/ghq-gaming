@@ -424,19 +424,38 @@ function SetRoomForm({ tournament, onSaved }) {
 }
 
 // ── Create Tournament Form ────────────────────────────────────────────────────
-function CreateForm({ onCreated }) {
+function CreateForm({ onCreated, prefill = null }) {
   const EMPTY = {
     name: '', game: '', platform: 'PC', type: 'TOURNAMENT', mode: 'FREE',
     teamSize: 'Solo',
-    entryFee: '', prizePool: '', maxPlayers: '64', coinReward: '100',
+    entryFee: '', prizePool: '', maxPlayers: '64', coinReward: '0',
     description: '', rules: '',
     registrationStart: '', registrationEnd: '', startDate: '', startTime: '18:00', tournamentEnd: '',
     prizeTiers: [],
     adsRequired: 0,
   }
-  const [form, setForm] = useState(EMPTY)
+
+  // When duplicating: copy everything except name + dates (admin fills those fresh)
+  const initialForm = prefill ? {
+    ...EMPTY,
+    game:        prefill.game        || '',
+    platform:    prefill.platform    || 'PC',
+    type:        prefill.type        || 'TOURNAMENT',
+    mode:        prefill.mode        || 'FREE',
+    teamSize:    prefill.teamSize    || 'Solo',
+    entryFee:    prefill.entryFee    ?? '',
+    prizePool:   prefill.prizePool   ?? '',
+    coinReward:  prefill.coinReward  ?? '0',
+    maxPlayers:  prefill.maxPlayers  ?? '64',
+    description: prefill.description || '',
+    rules:       Array.isArray(prefill.rules) ? prefill.rules.join('\n') : (prefill.rules || ''),
+    prizeTiers:  Array.isArray(prefill.prizeTiers) ? prefill.prizeTiers : [],
+    adsRequired: prefill.adsRequired ?? 0,
+  } : EMPTY
+
+  const [form, setForm] = useState(initialForm)
   const [loading, setLoading] = useState(false)
-  const [msg, setMsg] = useState('')
+  const [msg, setMsg] = useState(prefill ? `👍 Pre-filled from “${prefill.name}” — set a new name and dates then create!` : '')
   const [error, setError] = useState('')
 
   const games = ['Valorant', 'BGMI', 'Free Fire', 'COD Mobile', 'PUBG', 'CS2', 'Fortnite', 'Clash Royale']
@@ -1150,6 +1169,17 @@ export default function AdminTournaments() {
       <CreateForm onCreated={() => { load(); setTimeout(() => setView('list'), 1500) }} />
     </div>
   )
+
+  if (view === 'duplicate' && selected) return (
+  <div>
+    <button onClick={() => setView('list')} className="font-mono text-xs text-[#4a5568] hover:text-white mb-8 block">← Back</button>
+    <CreateForm
+      prefill={selected}
+      onCreated={() => { load(); setTimeout(() => setView('list'), 1500) }}
+    />
+  </div>
+)
+
  if (view === 'edit' && selected) return (
   <EditForm
     tournament={selected}
@@ -1237,10 +1267,17 @@ if (view === 'detail' && selected) return (
                 <div className="col-span-1 font-mono text-xs" style={{ color: '#f5a623' }}>{t.entryFee > 0 ? `🪙${t.entryFee}` : 'FREE'}</div>
                 <div className="col-span-1 font-mono text-[10px] text-[#4a5568]">{new Date(t.startDate).toLocaleDateString('en-IN')}</div>
                 <div className="col-span-1 flex justify-end">
-                  <button onClick={() => { setSelected(t); setView('detail') }}
-                    className="px-3 py-1.5 font-mono text-[9px] tracking-widest uppercase border border-[#00f5ff]/30 text-[#00f5ff] hover:bg-[#00f5ff]/10">
-                    Manage
-                  </button>
+                  <div className="flex gap-1.5">
+  <button onClick={() => { setSelected(t); setView('detail') }}
+    className="px-3 py-1.5 font-mono text-[9px] tracking-widest uppercase border border-[#00f5ff]/30 text-[#00f5ff] hover:bg-[#00f5ff]/10">
+    Manage
+  </button>
+  <button onClick={() => { setSelected(t); setView('duplicate') }}
+    title="Duplicate this tournament"
+    className="px-2 py-1.5 font-mono text-[9px] tracking-widest uppercase border border-[#7c3aed]/30 text-[#7c3aed] hover:bg-[#7c3aed]/10">
+    ⧉
+  </button>
+</div>
                 </div>
               </motion.div>
             )
