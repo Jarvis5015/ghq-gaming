@@ -67,9 +67,3 @@ npm install
 npm run dev                   # starts on :5173
 ```
 
-## Default Credentials (after seed)
-
-| Role   | Email              | Password   |
-|--------|--------------------|------------|
-| Admin  | admin@ghq.gg       | admin123   |
-| Player | phantom@ghq.gg     | player123  |
