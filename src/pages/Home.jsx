@@ -224,7 +224,7 @@ export default function Home() {
 
           <motion.div initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.35 }}>
             <div className="font-display font-bold leading-none mb-2">
-              <div className="text-6xl md:text-8xl text-white tracking-tight">my</div>
+              <div className="text-6xl md:text-8xl text-white tracking-tight">GAMER</div>
               <div className="text-6xl md:text-8xl tracking-tight" style={{ color:'#00f5ff', textShadow:'0 0 60px #00f5ff66, 0 0 120px #00f5ff33' }}>
                 HEAD<span className="text-white">QUARTER</span>
               </div>
